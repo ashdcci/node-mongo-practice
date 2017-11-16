@@ -1,0 +1,22 @@
+{
+  "name": "mongolist",
+  "version": "1.0.0",
+  "description": "simple mongo practice list",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "crypto": "0.0.3",
+    "ejs": "^2.5.6",
+    "express": "^4.15.3",
+    "jsonwebtoken": "^7.4.1",
+    "mongodb": "^2.2.30",
+    "mongojs": "^2.4.0",
+    "morgan": "^1.8.2",
+    "promise-mongo": "^3.0.3"
+  }
+}
