@@ -5,8 +5,8 @@ db = require('../config/db');
 
 
 
-var crypto  = require('crypto')
-jwt =  require('jsonwebtoken')
+var crypto = require('crypto')
+jwt = require('jsonwebtoken')
 superSecret = 'b1N3xXrpwNPrsLZH2GmCa95TbuU6hvvKQYVDcKSKrg4PfiOCm_X8A5G_hpLvTmD_'
 
 
@@ -41,7 +41,7 @@ router.get('/task/:id', function(req, res, next) {
 //Save Task
 router.post('/task', function(req, res, next) {
   var task = req.body;
-  
+
   if (!task.title || !(task.isDone + '')) {
     res.status(400);
     res.json({
@@ -104,18 +104,18 @@ router.put('/task/:id', function(req, res, next) {
 })
 
 // get users
-router.get('/users/',function(req, res, next){
-  db.users.find(function(err, results){
-      if(err){
-        res.send(err)
-      }
-      res.json(results)
+router.get('/users/', function(req, res, next) {
+  db.users.find(function(err, results) {
+    if (err) {
+      res.send(err)
+    }
+    res.json(results)
   })
   return
 })
 
 
-router.post('/register',function(req, res, next){
+router.post('/register', function(req, res, next) {
   var tomodel = {};
   if (!req.body.email || !req.body.password || !req.body.username) {
     res.status(400);
@@ -127,8 +127,8 @@ router.post('/register',function(req, res, next){
 
     tomodel.email = req.body.email
     tomodel.password = crypto.createHash("md5")
-                             .update(req.body.password)
-                             .digest('hex');
+      .update(req.body.password)
+      .digest('hex');
     tomodel.username = req.body.username
     tomodel.token = createToken(req.body.email)
 
@@ -142,7 +142,7 @@ router.post('/register',function(req, res, next){
 })
 
 
-router.post('/login',function(req, res, next){
+router.post('/login', function(req, res, next) {
   // check if user exist
 
   var tomodel = {};
@@ -155,27 +155,35 @@ router.post('/login',function(req, res, next){
   } else {
 
     pwd = crypto.createHash("md5")
-                .update(req.body.password)
-                .digest('hex');
+      .update(req.body.password)
+      .digest('hex');
 
-    db1.users.findOne({ email: req.body.email,password:pwd }).then(function(result){
+    db1.users.findOne({
+      email: req.body.email,
+      password: pwd
+    }).then(function(result) {
 
       var updTask = {}
       result.token = createToken(req.body.email)
-      console.log(result,result.token)
+      console.log(result, result.token)
 
       return db1.users.findOneAndUpdate({
-        _id:result._id
-      }, result, {multi:false})
+        _id: result._id
+      }, result, {
+        multi: false
+      })
 
-    }).then(function(updRes){
-        res.json(updRes)
-    }).catch(function(err){
+    }).then(function(updRes) {
+      res.json(updRes)
+    }).catch(function(err) {
       console.log(err)
       res.send(err)
     })
 
 
+    /**
+     * @deprecated code start
+     */
 
     // db.users.findOne({
     //   email: req.body.email,
@@ -200,6 +208,10 @@ router.post('/login',function(req, res, next){
     //   res.json(result)
     //
     // })
+
+    /**
+     * @deprecated code end
+     */
     return
 
   }
@@ -207,35 +219,75 @@ router.post('/login',function(req, res, next){
 })
 
 
+router.get('/user_profile/:id', function(req, res, next) {
+  if (!req.params.id) {
 
-createToken = function(id){
+    res.status(400).json({
+      'status': 0,
+      "msg": "Bad Data"
+    });
+    return
+  }
+
+  db.users.findOne({
+    _id: mongojs.ObjectId(req.params.id)
+  }, function(err, result) {
+    if (err) {
+      res.status(500).json({
+        'status': 0,
+        "msg": "problam in fetch User"
+      });
+      return
+    }
+
+    res.status(200).json({
+      'status': 0,
+      'msg': 'User fetched',
+      'data': result
+    })
+
+  })
+
+  return
+})
+
+
+router.post('/user_profile', function(req, res, next) {
+
+})
+
+
+
+
+
+createToken = function(id) {
 
   var exp_time = Math.floor(Date.now() / 1000) + (3600 * 3600);
   var token = jwt.sign({
-                exp: exp_time,
-                data: Math.floor((Math.random() * 1000000000) + 1).toString()
-              }, superSecret);
+    exp: exp_time,
+    data: Math.floor((Math.random() * 1000000000) + 1).toString()
+  }, superSecret);
   return token;
 
 }
 
-requireAuthentication = function(token){
+requireAuthentication = function(token) {
   // check header or url parameters or post parameters for token
 
-  var	superSecret1 = 'b1N3xXrpwNPrsLZH2GmCa95TbuU6hvvKQYVDcKSKrg4PfiOCm_X8A5G_hpLvTmD_';
-    // decode token
-    if (token) {
+  var superSecret1 = 'b1N3xXrpwNPrsLZH2GmCa95TbuU6hvvKQYVDcKSKrg4PfiOCm_X8A5G_hpLvTmD_';
+  // decode token
+  if (token) {
 
-      // verifies secret and checks exp
-      jwt.verify(token, superSecret1, function(err, decoded) {
-        if (err) {
-          return null
-        }
-        return decoded
-      });
+    // verifies secret and checks exp
+    jwt.verify(token, superSecret1, function(err, decoded) {
+      if (err) {
+        return null
+      }
+      return decoded
+    });
 
-    }
-    return null
+  }
+  return null
 }
 
 
