@@ -2,33 +2,7 @@ var express = require('express')
 var router = express.Router()
 var mongojs = require('mongojs')
 db = require('../config/db');
-
-
-var aws = require('aws-sdk')
-var multer = require('multer')
-var multerS3 = require('multer-s3')
-var s3 = new aws.S3({
-  region: 'ap-south-1',
-  accessKeyId: 'AKIAJUTZS2N6TMS24PVQ',
-  secretAccessKey: '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'
-})
-
-var upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: 'shared-test-dev',
-    acl: 'public-read-write',
-    metadata: function (req, file, cb) {
-      console.log(file);
-      console.log(file.fieldname);
-      cb(null, {fieldName: file.fieldname});
-    },
-    key: function (req, file, cb) {
-      console.log('hello');
-      cb(null, Date.now().toString()+file.originalname)
-    }
-  })
-})
+upload = require('../services/multer-s3')
 
 var crypto = require('crypto')
 jwt = require('jsonwebtoken')
@@ -277,8 +251,8 @@ router.get('/user_profile/:id', function(req, res, next) {
 })
 
 
-router.post('/user_profile', function(req, res, next) {
-
+router.post('/user_profile',upload.array('photos', 14) ,function(req, res, next) {
+  
 })
 
 
