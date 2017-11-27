@@ -5,10 +5,16 @@ var morgan      = require('morgan');
 var index = require('./routes/index');
 var tasks = require('./routes/tasks');
 var posts = require('./routes/posts');
+var users = require('./routes/users');
+config = require('config')
 
-var port = 3005;
+var port = config.get('ng-mongo.site.port');
 
 var app = express();
+
+// Body Parser MW
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 //View Engine
 app.set('views', path.join(__dirname, 'views'));
@@ -21,24 +27,28 @@ app.use(morgan('dev'));
 // Set Static Folder
 app.use(express.static(path.join(__dirname, 'client')));
 
-// Body Parser MW
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
 
-// error handling for dev mode
-app.use(function(err, req, res, next) {
-  console.log(err.status);
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: err
-    });
-});
+if(config.get('ng-mongo.site.env')=='dev'){
+  // error handling for dev mode
+  app.use(function(err, req, res, next) {
+
+      console.log(err.status);
+
+      res.status(err.status || 500);
+      res.render('error', {
+          message: err.message,
+          error: err
+      });
+  });
+}
 
 app.use('/', index);
 app.use('/api/tasks', tasks);
 app.use('/api/posts', posts);
+app.use('/api/users', users);
 
 app.listen(port, function(){
+  if(config.get('ng-mongo.site.env')=='dev'){
     console.log('Server started on port '+port);
+  }
 });

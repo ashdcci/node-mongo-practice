@@ -2,7 +2,8 @@
   "ng-mongo": {
     "site":{
       "url":"http://192.168.1.72:8089",
-      "port":8089,
+      "port":3005,
+      "env":"dev",
       "views":"ejs",
       "local_upload_path":"",
       "default_image_path":""

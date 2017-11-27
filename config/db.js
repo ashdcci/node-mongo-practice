@@ -1,10 +1,11 @@
 var mongojs = require('mongojs')
-db = mongojs('mongodb://root:core2duo@ds111622.mlab.com:11622/shared_test')
+config = require('config')
+db = mongojs('mongodb://'+config.get('ng-mongo.dbConfig.user')+':'+config.get('ng-mongo.dbConfig.password')+'@'+config.get('ng-mongo.dbConfig.host')+':'+config.get('ng-mongo.dbConfig.port')+'/'+config.get('ng-mongo.dbConfig.dbname'))
 
 var PM = require('promise-mongo')
 var pm = new PM()
 var collectionNames = [ 'users', 'tasks','posts' ]
-pm.initDb(collectionNames, 'mongodb://root:core2duo@ds111622.mlab.com:11622/shared_test')
+pm.initDb(collectionNames, 'mongodb://'+config.get('ng-mongo.dbConfig.user')+':'+config.get('ng-mongo.dbConfig.password')+'@'+config.get('ng-mongo.dbConfig.host')+':'+config.get('ng-mongo.dbConfig.port')+'/'+config.get('ng-mongo.dbConfig.dbname'))
 .then(function(mdb) {
 
     //db connected
@@ -15,10 +16,14 @@ pm.initDb(collectionNames, 'mongodb://root:core2duo@ds111622.mlab.com:11622/shar
 
     //cursor functions reference
     global.cur = pm.cur
-    console.log('Mongo Connection established');
+    if(config.get('ng-mongo.site.env')=='dev'){
+      console.log('Mongo Connection established');
+    }
 
 }).catch(function(err){
-  console.log(err)
+  if(config.get('ng-mongo.site.env')=='dev'){
+    console.log(err)
+  }
 })
 
 

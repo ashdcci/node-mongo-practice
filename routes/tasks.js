@@ -148,7 +148,8 @@ router.post('/login', function(req, res, next) {
   if (!req.body.email || !req.body.password) {
     res.status(400);
     res.json({
-      "error": "Bad Data"
+      'status':0,
+      "msg": "Not authenticate to Login"
     });
 
   } else {
@@ -157,27 +158,27 @@ router.post('/login', function(req, res, next) {
       .update(req.body.password)
       .digest('hex');
 
-    db1.users.findOne({
-      email: req.body.email,
-      password: pwd
-    }).then(function(result) {
+      db1.users.findOne({
+        email: req.body.email,
+        password: pwd
+      }).then(function(result) {
 
-      var updTask = {}
-      result.token = createToken(req.body.email)
-      console.log(result, result.token)
+        var updTask = {}
+        result.token = createToken(req.body.email)
+        console.log(result, result.token)
 
-      return db1.users.findOneAndUpdate({
-        _id: result._id
-      }, result, {
-        multi: false
+        return db1.users.findOneAndUpdate({
+          _id: result._id
+        }, result, {
+          multi: false
+        })
+
+      }).then(function(updRes) {
+        res.json(updRes)
+      }).catch(function(err) {
+        console.log(err)
+        res.send(err)
       })
-
-    }).then(function(updRes) {
-      res.json(updRes)
-    }).catch(function(err) {
-      console.log(err)
-      res.send(err)
-    })
 
 
     /**
@@ -252,7 +253,7 @@ router.get('/user_profile/:id', function(req, res, next) {
 
 
 router.post('/user_profile',upload.array('photos', 14) ,function(req, res, next) {
-  
+
 })
 
 
