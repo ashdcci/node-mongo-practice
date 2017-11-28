@@ -6,6 +6,7 @@ var index = require('./routes/index');
 var tasks = require('./routes/tasks');
 var posts = require('./routes/posts');
 var users = require('./routes/users');
+var mailer = require('express-mailer')
 config = require('config')
 
 var port = config.get('ng-mongo.site.port');
@@ -26,6 +27,10 @@ app.use(morgan('dev'));
 
 // Set Static Folder
 app.use(express.static(path.join(__dirname, 'client')));
+
+// set email service enabled
+mail_service = require('./services/mailer')(app)
+
 
 
 if(config.get('ng-mongo.site.env')=='dev'){
