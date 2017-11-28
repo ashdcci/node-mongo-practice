@@ -116,10 +116,6 @@ router.post('/login', function(req, res, next) {
       .digest('hex');
 
 
-
-
-
-
       db.users.count({ email: req.body.email },function(err,doc){
         if(err){
           res.status(500);
