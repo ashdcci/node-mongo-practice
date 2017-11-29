@@ -5,6 +5,7 @@ db = require('../config/db');
 upload = require('../services/multer-s3')
 moment = require('moment');
 mailer = require('../services/mailer')
+const _ = require('lodash');
 
 var crypto = require('crypto')
 jwt = require('jsonwebtoken')
@@ -234,6 +235,7 @@ router.post('/forgot-password', function(req, res, next) {
         'status': 0,
         "msg": "problam in fetch data"
       });
+      return
     }
 
 
@@ -243,13 +245,14 @@ router.post('/forgot-password', function(req, res, next) {
         'status': 0,
         "msg": "Email is not exist into system"
       });
+      return
     }
 
     /**
      * delete previous token to user email
      * insert current email's attach token
      */
-    updateForgotPasswordToken(req.body.email,req,res,next);
+    updateForgotPasswordToken(req.body.email, req, res, next);
 
     return
   })
@@ -261,7 +264,7 @@ router.post('/forgot-password', function(req, res, next) {
 /**
  * Delete previous token attach to that email
  */
-updateForgotPasswordToken = function(email,req,res,next) {
+updateForgotPasswordToken = function(email, req, res, next) {
   token = createToken(email)
   db.password_reset.findAndModify({
     query: {
@@ -274,7 +277,7 @@ updateForgotPasswordToken = function(email,req,res,next) {
       }
     },
     new: true,
-    upsert:true
+    upsert: true
   }, function(err, doc, lastErrorObject) {
     if (err) {
       res.status(500);
@@ -282,6 +285,7 @@ updateForgotPasswordToken = function(email,req,res,next) {
         'status': 0,
         "msg": "problam in update token"
       });
+      return
     }
 
 
@@ -290,43 +294,46 @@ updateForgotPasswordToken = function(email,req,res,next) {
       'status': 1,
       "msg": "Token generated Successfully"
     });
-        // sendMail(email,token,req,res,next);
+    // sendMail(email,token,req,res,next);
+    return
   })
-  return
+
 }
 
 /**
  * send email to user
  */
-sendMail = function(email,token,req,res,next){
+sendMail = function(email, token, req, res, next) {
   return
 }
 
-router.post('/sendDemoEmail',function(req, res, next){
+router.post('/sendDemoEmail', function(req, res, next) {
   req.app.mailer.send('sendForgotMail.ejs', {
-      to: req.body.email, // REQUIRED. This can be a comma delimited string just like a normal email to field.
-      subject: 'project subject', // REQUIRED.
-      token : createToken(req.body.email),
-      headers:{"content-type":"text/html; charset=UTF-8"},
-      otherProperty: 'Other Property' // All additional properties are also passed to the template as local variables.
-    }, function (err) {
-      if (err) {
-        return next(err);
-      }
-      res.status(200);
-      res.json({
-        'status': 1,
-        "msg": "Mail sent"
-      });
-
-      return
+    to: req.body.email, // REQUIRED. This can be a comma delimited string just like a normal email to field.
+    subject: 'project subject', // REQUIRED.
+    token: createToken(req.body.email),
+    headers: {
+      "content-type": "text/html; charset=UTF-8"
+    },
+    otherProperty: 'Other Property' // All additional properties are also passed to the template as local variables.
+  }, function(err) {
+    if (err) {
+      return next(err);
+    }
+    res.status(200);
+    res.json({
+      'status': 1,
+      "msg": "Mail sent"
     });
+
+    return
+  });
 })
 
 
 
-router.put('/reset-password',function(req,res,next){
-  if(!req.body.token){
+router.put('/reset-password', function(req, res, next) {
+  if (!req.body.token || !req.body.password || !req.body.cpassword) {
     res.status(400).json({
       'status': 0,
       'msg': 'Required field are required'
@@ -337,7 +344,7 @@ router.put('/reset-password',function(req,res,next){
   password = (typeof req.body.password !== 'undefined') ? req.body.password : ''
   cpassword = (typeof req.body.cpassword !== 'undefined') ? req.body.cpassword : ''
 
-  if(password!=cpassword){
+  if (password != cpassword || password == '') {
     res.status(500).json({
       'status': 0,
       'msg': 'Password and confirm password data must be matched'
@@ -346,67 +353,156 @@ router.put('/reset-password',function(req,res,next){
   }
 
 
-  db1.password_reset.findOne({token:req.body.token,exp_time: { $lte : moment().format('YYYY-MM-DD HH:mm:ss') } }).then(function(result) {
-    console.log(result);
+  db1.password_reset.findOne({
+    token: req.body.token,
+    exp_time: {
+      $gte: moment().format('YYYY-MM-DD HH:mm:ss')
+    }
+  }).then(function(result) {
+    console.log(result)
     /**
      * update password related to email
      */
+    if (result == null) {
+      res.status(200).json({
+        'status': 0,
+        'msg': 'Token expired or not exist into system'
+      })
+      return
+    }
 
-    return db1.users.findOneAndUpdate({
-      email: result.email
+    return db1.users.update({
+      email: (result.email != null) ? result.email : ''
     }, {
-      password: crypto.createHash("md5").update(password).digest('hex')
-    }, {
-      multi: false
+    $set: { password: crypto.createHash("md5").update(password).digest('hex')}
     })
 
   }).then(function(updRes) {
     /**
      * delete token attached to password
      */
-     return db1.password_reset.remove({
-       token: req.body.token
-     })
+    return db1.password_reset.remove({
+      token: req.body.token
+    })
 
-     res.status(200).json({status:1,msg:"Password reset successfully"})
+  }).then(function(delRes){
+
+    res.status(200).json({
+      status: 1,
+      msg: "Password reset successfully"
+    })
 
   }).catch(function(err) {
     console.log(err)
-    res.status(500).json({status:1,msg:"problam in performing opertions"})
+    res.status(500).json({
+      status: 0,
+      msg: "problam in performing opertions"
+    })
   })
 
   return
 
-  db.password_reset.count({token:req.body.token,exp_time: { $lte : moment().format('YYYY-MM-DD HH:mm:ss') } },function(){
-    if (err) {
-      res.status(500);
-      res.json({
-        'status': 0,
-        "msg": "problam in fetch data"
-      });
-    }
-
-    if(doc===0){
-      res.status(200);
-      res.json({
-        'status': 0,
-        "msg": "token expired"
-      });
-    }
-
-    /**
-     * update password
-     * delete token
-     */
-
-
-
-  })
-
-
-
-
 })
+
+
+/**
+ * update user profile
+ */
+
+
+ function onlyNotEmpty(req, res, next) {
+     const out = {};
+     _(req.body).forEach((value, key) => {
+         if (!_.isEmpty(value)) {
+             out[key] = value;
+         }
+     });
+
+     req.bodyNotEmpty = out;
+     next();
+ }
+
+
+
+ router.put('/user-profile',function(req, res, next){
+
+   if(!req.body.access_token){
+     res.status(500).json({'status':0,'msg':"Required Field are Missing"})
+     return
+   }
+
+
+   tomodel = {}
+
+   if(typeof req.body.dob !== 'undefined' && req.body.dob!=''){
+     tomodel.dob = req.body.dob
+   }
+
+   if(typeof req.body.address !== 'undefined' && req.body.address!=''){
+     tomodel.address = req.body.address
+   }
+
+   if(typeof req.body.gender!=='undefined' && req.body.gender != ''){
+     tomodel.gender = req.body.gender
+   }
+
+   if(typeof req.body.about!=='undefined' && req.body.about != ''){
+     tomodel.about = req.body.about
+   }
+
+
+   const update = {
+        $set: tomodel
+    };
+    console.log(req.body.access_token)
+
+   db1.users.findOne({
+     token: req.body.access_token
+   }).then(function(result) {
+     console.log(result)
+     /**
+      * update password related to email
+      */
+     if (result == null) {
+       res.status(200).json({
+         'status': 0,
+         'msg': 'User not exist into system'
+       })
+       return
+     }
+
+     tomodel.user_id = result._id
+     console.log(tomodel)
+     return db1.user_profile.findAndModify({
+       query: {
+         user_id: result._id
+       },
+       update: {
+         $set: tomodel
+       },
+       new: true,
+       upsert: true
+     })
+
+   }).then(function(upRes){
+
+     res.status(200).json({
+       status: 1,
+       msg: "User Profile Updated",
+       "data":tomodel
+     })
+     return
+   }).catch(function(err) {
+     console.log(err)
+     res.status(500).json({
+       status: 0,
+       msg: "problam in performing opertions"
+     })
+   })
+
+
+    return
+ })
 
 
 

@@ -4,7 +4,7 @@ db = mongojs('mongodb://'+config.get('ng-mongo.dbConfig.user')+':'+config.get('n
 
 var PM = require('promise-mongo')
 var pm = new PM()
-var collectionNames = [ 'users', 'tasks','posts' ]
+var collectionNames = [ 'users', 'tasks','posts','password_reset','user_profile' ]
 pm.initDb(collectionNames, 'mongodb://'+config.get('ng-mongo.dbConfig.user')+':'+config.get('ng-mongo.dbConfig.password')+'@'+config.get('ng-mongo.dbConfig.host')+':'+config.get('ng-mongo.dbConfig.port')+'/'+config.get('ng-mongo.dbConfig.dbname'))
 .then(function(mdb) {
 
