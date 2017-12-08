@@ -454,38 +454,104 @@ router.put('/reset-password', function(req, res, next) {
    const update = {
         $set: tomodel
     };
-    console.log(req.body.access_token)
+
+    db.users.findOne({
+      token: req.body.access_token
+    },function(err, result){
+      if(err){
+        return res.status(500).json({
+          status: 0,
+          msg: "problam in performing opertions"
+        })
+      }
+
+      if (result == null) {
+        res.status(200).json({
+          'status': 0,
+          'msg': 'User not exist into system'
+        })
+
+        return
+      }
+
+      tomodel.user_id = mongojs.ObjectId(result._id)
+      console.log(tomodel)
+      db.user_profile.findAndModify({
+        query: {
+          user_id: mongojs.ObjectId(result._id)
+        },
+        update: {
+          $set: tomodel
+        },
+        new: true,
+        upsert: true
+      },function(err1,doc1){
+        if(err1){
+          return res.status(500).json({
+            status: 0,
+            msg: "problam in performing opertions"
+          })
+        }
+        // result.profile_data = doc1
+        result.about = doc1.about
+        result.address = doc1.address
+        result.gender = doc1.gender
+
+        res.status(200).json({
+          status: 1,
+          msg: "User Profile Updated",
+          "data1":result
+        })
+        return
+
+
+      })
+
+      return
+    })
+
+
+
+    return
 
    db1.users.findOne({
      token: req.body.access_token
    }).then(function(result) {
-     console.log(result)
+
      /**
       * update password related to email
       */
      if (result == null) {
+       console.log(22)
        res.status(200).json({
          'status': 0,
          'msg': 'User not exist into system'
        })
+       throw 'no result';
        return
+     }else{
+       console.log(result)
+       tomodel.user_id = mongojs.ObjectId(result._id)
+       console.log(tomodel)
+       return db1.user_profile.findOneAndUpdate({
+         query: {
+           user_id: mongojs.ObjectId(result._id)
+         },
+         update: {
+           $set: {
+             user_id: mongojs.ObjectId(result._id),
+             token: createToken(1)
+           }
+         },
+         new: true,
+         upsert: true
+       })
      }
 
-     tomodel.user_id = result._id
-     console.log(tomodel)
-     return db1.user_profile.findAndModify({
-       query: {
-         user_id: result._id
-       },
-       update: {
-         $set: tomodel
-       },
-       new: true,
-       upsert: true
-     })
+
 
    }).then(function(upRes){
-
+     console.log(2154)
      res.status(200).json({
        status: 1,
        msg: "User Profile Updated",
@@ -494,7 +560,7 @@ router.put('/reset-password', function(req, res, next) {
      return
    }).catch(function(err) {
      console.log(err)
-     res.status(500).json({
+     return res.status(500).json({
        status: 0,
        msg: "problam in performing opertions"
      })
@@ -503,6 +569,25 @@ router.put('/reset-password', function(req, res, next) {
 
     return
  })
+
+
+ router.get('/user-profile',function(req, res, next){
+
+   if(req.body.access_token){
+     return res.status(400).json({
+       status:0,
+       msg: "required fields are missing"
+     })
+   }
+
+
+
+
+   return
+ })
+
+
+
 
 
 
