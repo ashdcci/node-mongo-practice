@@ -514,80 +514,165 @@ router.put('/reset-password', function(req, res, next) {
 
     return
 
-   db1.users.findOne({
-     token: req.body.access_token
-   }).then(function(result) {
-
-     /**
-      * update password related to email
-      */
-     if (result == null) {
-       console.log(22)
-       res.status(200).json({
-         'status': 0,
-         'msg': 'User not exist into system'
-       })
-       throw 'no result';
-       return
-     }else{
-       console.log(result)
-       tomodel.user_id = mongojs.ObjectId(result._id)
-       console.log(tomodel)
-       return db1.user_profile.findOneAndUpdate({
-         query: {
-           user_id: mongojs.ObjectId(result._id)
-         },
-         update: {
-           $set: {
-             user_id: mongojs.ObjectId(result._id),
-             token: createToken(1)
-           }
-         },
-         new: true,
-         upsert: true
-       })
-     }
-
-
-
-   }).then(function(upRes){
-     console.log(2154)
-     res.status(200).json({
-       status: 1,
-       msg: "User Profile Updated",
-       "data":tomodel
-     })
-     return
-   }).catch(function(err) {
-     console.log(err)
-     return res.status(500).json({
-       status: 0,
-       msg: "problam in performing opertions"
-     })
-   })
-
-
-    return
  })
 
 
- router.get('/user-profile',function(req, res, next){
+ router.get('/user-profile/:id',function(req, res, next){
 
-   if(req.body.access_token){
+   if(!req.params.id){
      return res.status(400).json({
        status:0,
        msg: "required fields are missing"
      })
    }
 
+   db.users.findOne({
+     _id: mongojs.ObjectId(req.params.id)
+   },function(err, result){
+     if(err){
+       return res.status(500).json({
+         status: 0,
+         msg: "problam in performing opertions"
+       })
+     }
 
+     if (result == null) {
+       res.status(200).json({
+         'status': 0,
+         'msg': 'User not exist into system'
+       })
+
+       return
+     }
+
+
+
+
+     db.users.aggregate([
+       {
+         "$lookup": {
+           "from": "user_profile",
+           "localField": "_id",
+           "foreignField": "user_id",
+           "as": "user_profile"
+         }
+       },
+       {
+         "$match": {
+
+           "_id":mongojs.ObjectId(req.params.id)
+         }
+       },
+       {$unwind: {'path': '$user_profile',preserveNullAndEmptyArrays: true,includeArrayIndex: "arrayIndex"}},
+       {
+         "$project": {
+           "_id": "$_id",
+           "email": "$email",
+           "profile_data":{
+             about: { $ifNull: [ "$user_profile.about", "" ] },
+             address: { $ifNull: [ "$user_profile.address", "" ] },
+             gender: { $ifNull: [ "$user_profile.gender", "" ] },
+           },
+
+         }
+       }
+     ],function(err, post) {
+       if (err) {
+         res.status(500).send(err)
+         return
+       }
+       res.status(200).json({
+         'status': 1,
+         'msg': 'User data',
+         "data":post[0]
+       })
+     })
+
+
+     return
+   })
 
 
    return
  })
 
 
+ router.post('/upload-image',checkToken,upload.array('image', 1),function(req, res, next){
 
+
+   return
+
+   db.user_profile.findAndModify({
+     query: {
+       user_id: mongojs.ObjectId()
+     },
+     update: {
+       $set: {
+         user_id : mongojs.ObjectId(result._id),
+         filename: req.files.originalname
+       }
+     },
+     new: true,
+     upsert: true
+   },function(err1,doc1){
+     if(err1){
+       return res.status(500).json({
+         status: 0,
+         msg: "problam in performing opertions"
+       })
+     }
+
+
+     res.status(200).json({
+       status: 1,
+       msg: "User Image Updated",
+       "filename":result
+     })
+     return
+
+
+   })
+     return
+ })
+
+ function checkToken(req,res, next){
+   console.log(req.headers['access_token'])
+   if(!req.headers['access_token']){
+     return res.status(400).json({
+       status:0,
+       filename: "",
+       msg: "required fields are missing"
+     })
+   }
+
+   db.users.findOne({
+     access_token: req.headers['access_token']
+   },function(err, result){
+     if(err){
+       return res.status(500).json({
+         status: 0,
+         filename: "",
+         msg: "problam in performing opertions"
+       })
+     }
+     
+     if (result == null) {
+       res.status(500).json({
+         'status': 0,
+         filename: "",
+         'msg': 'User not exist into system'
+       })
+
+       return
+     }
+
+
+
+   return result._id
+   })
+
+
+ }
 
 
 
