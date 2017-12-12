@@ -1,0 +1,35 @@
+{
+  "ng-mongo": {
+    "site":{
+      "url":"http://192.168.1.72:3001",
+      "port":3001,
+      "env":"dev",
+      "views":"ejs",
+      "local_upload_path":"",
+      "default_image_path":""
+    },
+    "dbConfig": {
+      "host": "localhost",
+      "port": 27017,
+      "dbname": "shared_test",
+      "user": "root",
+      "password": "core2duo"
+    },
+    "redis":{
+      "host":"localhost",
+      "port":6379,
+      "ttl":864000
+    },
+    "morgan":{
+      "mode":"dev"
+    },
+    "aws":{
+      "bucket":"shared-test-dev",
+      "region":"ap-south-1",
+      "acl":"public-read-write",
+      "path":"https://s3-ap-south-1.amazonaws.com/shared-test-dev/",
+      "key":"AKIAJUTZS2N6TMS24PVQ",
+      "secret":"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"
+    }
+  }
+}
