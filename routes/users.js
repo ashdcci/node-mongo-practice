@@ -7,9 +7,12 @@ var mongoose = require('mongoose');
 
 mailer = require('../services/mailer')
 const _ = require('lodash');
-userSchema = require('../schema/userSchema')
+Schema = require('../schema/userSchema')
 
-var User = db.model('User', userSchema)
+// model defination
+var User = db.model('User', Schema.userSchema)
+var Password = db.model('Password',Schema.PasswordResetSchema)
+
 
 var crypto = require('crypto')
 jwt = require('jsonwebtoken')
@@ -60,102 +63,55 @@ router.post('/register',function(req, res, next){
       .update(req.body.password)
       .digest('hex');
 
+      tomodel = {}
 
-      var promise = User.findOne({email:req.body.email}).exec();
-
-      User.findOne({email:req.body.email}).exec()
+    User.findOne({email:req.body.email}).exec()
       .then(function(user) {
 
         if(user!=null){
-          throw(22)
-          return res.send('user already exist')
-        }
 
-        // user.first_name = 'Robert Paulson';
+          throw({err_obj:2})
 
-        return User.save({first_name: 'usersss'}); // returns a promise
-      })
-      .then(function(user) {
-        console.log('updated user: ' + user.name);
-        // do something with updated user
-      })
-      .catch(function(err){
-        // just need one of these
-        console.log('error:', err);
-      });
-
-      return
-
-    User.findOne({'email':req.body.email})
-      .then(function(user) {
-        console.log(user);
-        if(user){
-
-          return res.status(500).json({
-            status: 0,
-            msg: 'user already exist'
-          });
         }else{
 
-          // user.email = req.body.email;
-          // user.password = pwd
-          // access_token: createToken(req.body.email)
-          // return user.save(); // returns a promise
+          tomodel.email =  req.body.email
+          tomodel.password =  pwd
+          tomodel.access_token= createToken(req.body.email)
 
-          return User.save({
-            email: req.body.email,
-            password: pwd,
-            access_token: createToken(req.body.email)
-          })
+          var user_data = new User(tomodel)
+          return user_data.save()
+
         }
+
       })
       .then(function(user_data){
           return res.status(200).json({
             status : 1,
             msg : 'register process done',
-            data: user_data
+            user_data: user_data
           })
       })
       .catch(function(err){
-        // just need one of these
-        console.log('error:', err);
-      });
 
+        if(err.err_obj){
 
-      return
+          return res.status(503).json({
+            status: 0,
+            msg: 'user already exist'
+          });
 
-
-
-    var Promise = User.findOne({'email':req.body.email}).exec();
-
-      Promise.then(function(user) {
-        console.log(user)
-        if(user){
-          res.status = 404;
-          return Promise.reject('user already exist');
         }else{
-          user.email = req.body.email
-          user.password = pwd
-          return user.findAndModify(); // returns a promise
+
+          return res.status(500).json({
+            status:0,
+            msg: "problam in fetch data"
+          })
+
         }
 
-
       })
-      .then(function(user) {
-        return res.status(200).json({
-          status: 1,
-          msg: 'register done',
-          data: user
-        });
-        // do something with updated user
-      })
-      .catch(function(err){
-        // just need one of these
-        console.log('error:', err);
-      });
 
-
-    return
+      return
 
 })
 
@@ -169,6 +125,77 @@ createToken = function(id) {
   return token;
 
 }
+
+
+
+ router.post('/forgot-password',function(req, res, next){
+
+   if(!req.body.email || !req.body.password || !req.body.cpassword){
+     return res.status(400).json({
+       status:0,
+       msg:'required field are missing'
+     })
+   }
+
+  password = (typeof req.body.password!==undefined) ? req.body.password : ''
+  cpassword = (typeof req.body.cpassword!==undefined) ? req.body.cpassword : ''
+
+  if(password != cpassword){
+    return res.status(500).json({
+      status:0,
+      msg: 'password and confirm password is not same'
+    })
+  }
+
+
+
+  User.findOne({email:req.body.email}).exec()
+    .then(function(user) {
+
+      if(user!=null){
+
+        return Password.update({email: req.body.email},{
+          token: createToken(req.body.email),
+          expired_at: moment().add(1, 'days').format('YYYY-MM-DD HH:mm:ss')
+        },{new:true},{upsert:true})
+
+
+      }else{
+        throw({err_obj:2})
+      }
+
+    })
+    .then(function(user_data){
+      console.log(user_data)
+        return res.status(200).json({
+          status : 1,
+          msg : 'Reset Password Token generated'
+        })
+    })
+    .catch(function(err){
+
+      if(err.err_obj){
+
+        return res.status(503).json({
+          status: 0,
+          msg: 'user not exist'
+        });
+
+      }else{
+        console.log(err)
+        return res.status(500).json({
+          status:0,
+          msg: "problam in fetch data"
+        })
+
+      }
+
+    })
+
+   return
+
+
+ })
 
 
 module.exports = router
