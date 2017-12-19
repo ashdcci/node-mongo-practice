@@ -130,23 +130,16 @@ createToken = function(id) {
 
  router.post('/forgot-password',function(req, res, next){
 
-   if(!req.body.email || !req.body.password || !req.body.cpassword){
+   if(!req.body.email){
      return res.status(400).json({
        status:0,
        msg:'required field are missing'
      })
    }
 
-  password = (typeof req.body.password!==undefined) ? req.body.password : ''
-  cpassword = (typeof req.body.cpassword!==undefined) ? req.body.cpassword : ''
+  
 
-  if(password != cpassword){
-    return res.status(500).json({
-      status:0,
-      msg: 'password and confirm password is not same'
-    })
-  }
-
+   
 
 
   User.findOne({email:req.body.email}).exec()
@@ -154,10 +147,16 @@ createToken = function(id) {
 
       if(user!=null){
 
-        return Password.update({email: req.body.email},{
+        var conditions = { email: req.body.email} 
+  , update = {
           token: createToken(req.body.email),
           expired_at: moment().add(1, 'days').format('YYYY-MM-DD HH:mm:ss')
-        },{new:true},{upsert:true})
+        }
+  , options = {upsert:true};
+
+    return Password.update(conditions, update, options, function(err, numAffected){
+      console.log(err,numAffected)
+    });
 
 
       }else{
@@ -197,5 +196,45 @@ createToken = function(id) {
 
  })
 
+
+router.post('/reset-password',function(req, res, next){
+
+   if(!req.body.token || !req.body.password || !req.body.cpassword){
+     return res.status(400).json({
+       status:0,
+       msg:'required field are missing'
+     })
+   }
+
+   console.log(Date.now())
+
+  password = (typeof req.body.password!==undefined) ? req.body.password : ''
+  cpassword = (typeof req.body.cpassword!==undefined) ? req.body.cpassword : ''
+
+  if(password != cpassword){
+    return res.status(500).json({
+      status:0,
+      msg: 'password and confirm password is not same'
+    })
+  }
+
+
+
+
+
+  Password.
+  find({ token: req.body.token }).
+  where('token').equals(req.body.token).
+   where('expired_at').lte(Date.now() ).exec().
+  then(function(doc){
+    console.log(doc)
+  }).catch(function(err){
+    console.log(err)
+  })
+
+
+
+
+})
 
 module.exports = router
