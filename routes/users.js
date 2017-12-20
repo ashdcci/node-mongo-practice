@@ -137,9 +137,9 @@ createToken = function(id) {
      })
    }
 
-  
 
-   
+
+
 
 
   User.findOne({email:req.body.email}).exec()
@@ -147,16 +147,15 @@ createToken = function(id) {
 
       if(user!=null){
 
-        var conditions = { email: req.body.email} 
-  , update = {
-          token: createToken(req.body.email),
-          expired_at: moment().add(1, 'days').format('YYYY-MM-DD HH:mm:ss')
-        }
-  , options = {upsert:true};
+        var conditions = { email: req.body.email}
+          , update = {
+                  token: createToken(req.body.email),
+                  expired_at: moment().add(1, 'days').format('YYYY-MM-DD HH:mm:ss'),
+                  created_at: moment().format('YYYY-MM-DD HH:mm:ss')
+                }
+          , options = {upsert:true};
 
-    return Password.update(conditions, update, options, function(err, numAffected){
-      console.log(err,numAffected)
-    });
+      return Password.update(conditions, update, options);
 
 
       }else{
@@ -165,7 +164,7 @@ createToken = function(id) {
 
     })
     .then(function(user_data){
-      console.log(user_data)
+
         return res.status(200).json({
           status : 1,
           msg : 'Reset Password Token generated'
@@ -181,7 +180,7 @@ createToken = function(id) {
         });
 
       }else{
-        console.log(err)
+
         return res.status(500).json({
           status:0,
           msg: "problam in fetch data"
@@ -206,7 +205,7 @@ router.post('/reset-password',function(req, res, next){
      })
    }
 
-   console.log(Date.now())
+  //  console.log(ISODate(''))
 
   password = (typeof req.body.password!==undefined) ? req.body.password : ''
   cpassword = (typeof req.body.cpassword!==undefined) ? req.body.cpassword : ''
@@ -225,11 +224,51 @@ router.post('/reset-password',function(req, res, next){
   Password.
   find({ token: req.body.token }).
   where('token').equals(req.body.token).
-   where('expired_at').lte(Date.now() ).exec().
+   where('expired_at').gte(new Date("2017-12-20T00:00:00.000Z")).exec().
   then(function(doc){
-    console.log(doc)
+
+    if(doc!=null){
+
+      pwd = crypto.createHash("md5")
+        .update(req.body.cpassword)
+        .digest('hex');
+
+      return User.update({email:doc.email},{password:pwd})
+    }else{
+      throw({err_obj:2})
+    }
+
+
+
+  }).then(function(user_data){
+    console.log(user_data)
+    return Password.remove({token: doc.token})
+
+  }).then(function(pass_data){
+    console.log(pass_data)
+    return res.status(200).json({
+      status: 0,
+      msg: 'password saved successfully'
+    });
+
   }).catch(function(err){
     console.log(err)
+    if(err.err_obj){
+
+      return res.status(503).json({
+        status: 0,
+        msg: 'user not exist'
+      });
+
+    }else{
+
+      return res.status(500).json({
+        status:0,
+        msg: "problam in fetch data"
+      })
+
+    }
+
   })
 
 

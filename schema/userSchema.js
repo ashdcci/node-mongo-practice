@@ -21,9 +21,11 @@ userSchema.index({ email: 1, _id: -1 });
 
 var PasswordResetSchema = new Schema({
   email: { type: String,required: true, index: { unique: true }},
-  token: String,
-  created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
-  expired_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
+  token: {type: String,required: true},
+  created_at: { type: Date,required: true, default: moment().format('YYYY-MM-DD HH:mm:ss') },
+  expired_at: { type: Date,required: true, default: moment().format('YYYY-MM-DD HH:mm:ss') },
+},{
+  strict: true
 })
 
 PasswordResetSchema.index({ email: 1, _id: -1 });
