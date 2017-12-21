@@ -19,6 +19,52 @@ jwt = require('jsonwebtoken')
 superSecret = 'b1N3xXrpwNPrsLZH2GmCa95TbuU6hvvKQYVDcKSKrg4PfiOCm_X8A5G_hpLvTmD_'
 
 
+function authToken(req,res, next){
+
+
+  // check header or url parameters or post parameters for token
+var token = req.body.token || req.query.token || req.headers['x-access-token'];
+
+// decode token
+if (token) {
+
+  // verifies secret and checks exp
+  jwt.verify(token, superSecret, function(err, decoded) {
+    if (err) {
+      return res.status(400).json({ success: 0, message: 'Failed to authenticate token.' });
+    } else {
+      // if everything is good, save to request for use in other routes
+      req.decoded = decoded;
+      User.findOne({access_token:token},function(err1,doc){
+
+          if(err1){
+            return res.status(400).json({ success: 0, message: 'Failed to authenticate token.' });
+          }else if(doc==null){
+            return res.status(400).json({ success: 0, message: 'Failed to authenticate token.' });
+          }
+          next();
+
+      })
+      return
+    }
+  });
+
+} else {
+
+  // if there is no token
+  // return an error
+  return res.status(403).json({
+      success: 0,
+      message: 'No token provided.'
+  });
+
+}
+
+
+
+}
+
+
 router.get('/users/:id',function(req, res, next){
     if(!req.params.id){
         return res.status(500).json({
@@ -217,23 +263,18 @@ router.post('/reset-password',function(req, res, next){
     })
   }
 
-
-
-
-
   Password.
   find({ token: req.body.token }).
   where('token').equals(req.body.token).
-   where('expired_at').gte(new Date("2017-12-20T00:00:00.000Z")).exec().
+  where('expired_at').gte(moment().format('YYYY-MM-DD HH:mm:ss')).exec().
   then(function(doc){
-
-    if(doc!=null){
+    if(doc!=null && doc.length > 0){
 
       pwd = crypto.createHash("md5")
         .update(req.body.cpassword)
         .digest('hex');
 
-      return User.update({email:doc.email},{password:pwd})
+      return User.update({email:doc[0].email},{password:pwd},{})
     }else{
       throw({err_obj:2})
     }
@@ -241,23 +282,29 @@ router.post('/reset-password',function(req, res, next){
 
 
   }).then(function(user_data){
-    console.log(user_data)
-    return Password.remove({token: doc.token})
+
+
+    if(user_data.nModified>0){
+      return Password.remove({token: req.body.token})
+    }else{
+      throw({err_obj:3})
+    }
 
   }).then(function(pass_data){
-    console.log(pass_data)
+
     return res.status(200).json({
       status: 0,
       msg: 'password saved successfully'
     });
 
   }).catch(function(err){
-    console.log(err)
+
     if(err.err_obj){
 
+      msg = (err.err_obj==2) ? 'Token expired or not exist' : 'problam in password updation'
       return res.status(503).json({
         status: 0,
-        msg: 'user not exist'
+        msg: msg
       });
 
     }else{
@@ -275,5 +322,37 @@ router.post('/reset-password',function(req, res, next){
 
 
 })
+
+
+/**
+ * User Profile APIs
+ */
+
+ router.put('/user-profile',authToken,function(req, res, next){
+
+   if(!req.body.token){
+     return res.status(403).send({
+         success: 0,
+         message: 'No token provided.'
+     });
+   }
+
+   return res.status(200).send({
+       success: 1,
+       message: 'token provided',
+       token: req.body.token
+   });
+
+
+   User.findOne({access_token:req.body})
+
+
+ })
+
+
+
+
+
+
 
 module.exports = router
