@@ -12,6 +12,7 @@ Schema = require('../schema/userSchema')
 // model defination
 var User = db.model('User', Schema.userSchema)
 var Password = db.model('Password',Schema.PasswordResetSchema)
+var Profile  = db.model('Profile',Schema.ProfileSchema)
 
 
 var crypto = require('crypto')
@@ -337,22 +338,135 @@ router.post('/reset-password',function(req, res, next){
      });
    }
 
-   return res.status(200).send({
-       success: 1,
-       message: 'token provided',
-       token: req.body.token
-   });
 
 
-   User.findOne({access_token:req.body})
+   tomodel = {}
+   if(typeof req.body.dob !== 'undefined' && req.body.dob!=''){
+     tomodel.dob = req.body.dob
+   }
+
+   if(typeof req.body.address !== 'undefined' && req.body.address!=''){
+     tomodel.address = req.body.address
+   }
+
+   if(typeof req.body.gender!=='undefined' && req.body.gender != ''){
+     tomodel.gender = req.body.gender
+   }
+
+   if(typeof req.body.about!=='undefined' && req.body.about != ''){
+     tomodel.about = req.body.about
+   }
+
+
+   user_doc = {}
+
+
+   User.findOne({access_token:req.body.token},function(err, doc){
+      if(err){
+        return res.status(500).json({
+          status:0,
+          msg: "problam in fetch data1"
+        })
+      }
+
+      if(doc==null){
+        return res.status(400).json({
+          status:0,
+          msg: "User Data not found"
+        })
+      }
+
+
+      tomodel.user_id = doc._id
+
+
+      Profile.findOneAndUpdate({user_id: doc._id},{$set: tomodel},{upsert:true},function(err1,doc1){
+          if(err1){
+            return res.status(500).json({
+              status:0,
+              msg: "problam in fetch data23"
+            })
+          }
+
+          doc = doc.toJSON()
+
+          doc.about = (doc1.about!==undefined) ? ((doc1.about==tomodel.about) ? doc1.about : tomodel.about) : ''
+          doc.address = (doc1.address!==undefined) ? ((doc1.address==tomodel.address) ? doc1.address : tomodel.address) : ''
+          doc.gender = (doc1.gender!==undefined) ? ((doc1.gender==tomodel.gender) ? doc1.gender : tomodel.gender) : ''
+          doc.dob = (doc1.dob!==undefined) ? ((doc1.dob==tomodel.dob) ? doc1.dob : tomodel.dob) : ''
+
+          res.status(200).json({
+            status: 1,
+            msg: "User Profile Updated",
+            "data":doc,
+          })
+          return
+      })
+
+   })
 
 
  })
 
+ router.get('/profile/:id',function(req, res, next){
+   if(!req.params.id){
+     return res.status(403).send({
+         success: 0,
+         message: 'required fields are missing'
+     });
+   }
 
 
+   User.aggregate([
+     {
+       "$lookup": {
+         "from": "profiles",
+         "localField": "_id",
+         "foreignField": "user_id",
+         "as": "user_profile"
+       }
+     },
+     {
+       "$match": {
+         "_id":mongoose.Types.ObjectId(req.params.id)
+       }
+     },
+     {$unwind: {'path': '$user_profile',preserveNullAndEmptyArrays: true,includeArrayIndex: "arrayIndex"}},
+     {
+       "$project": {
+         "_id": "$_id",
+         "email": "$email",
+         "profile_data":{
+           about: { $ifNull: [ "$user_profile.about", "" ] },
+           address: { $ifNull: [ "$user_profile.address", "" ] },
+           gender: { $ifNull: [ "$user_profile.gender", "" ] },
+         },
+       }
+     }
+   ],function(err, doc) {
+     if (err) {
+       return res.status(500).json({
+         status:0,
+         msg: "problam in fetch data1"
+       })
+     }
+
+     if(doc==null){
+       return res.status(400).json({
+         status:0,
+         msg: "User Data not found"
+       })
+     }
+
+    return res.status(200).json({
+       'status': 1,
+       'msg': 'User data',
+       "data":doc[0]
+     })
+   })
 
 
+ })
 
 
 module.exports = router

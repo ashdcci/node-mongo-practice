@@ -51,4 +51,9 @@ var ImageSchema = new Schema({
 })
 
 
-module.exports = {userSchema:userSchema,PasswordResetSchema:PasswordResetSchema,ProfileSchema:ProfileSchema,ImageSchema:ImageSchema}
+module.exports = {
+  userSchema:userSchema,
+  PasswordResetSchema:PasswordResetSchema,
+  ProfileSchema:ProfileSchema,
+  ImageSchema:ImageSchema
+}

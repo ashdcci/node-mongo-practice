@@ -4,6 +4,7 @@ var bodyParser = require('body-parser');
 var morgan      = require('morgan');
 var index = require('./routes/index');
 var users = require('./routes/users');
+var jobs = require('./routes/jobs');
 var mailer = require('express-mailer')
 config = require('config')
 
@@ -47,6 +48,7 @@ if(config.get('ng-mongo.site.env')=='dev'){
 
 app.use('/', index);
 app.use('/api/users', users);
+app.use('/api/jobs', jobs);
 
 app.listen(port, function(){
   if(config.get('ng-mongo.site.env')=='dev'){
