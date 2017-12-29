@@ -6,23 +6,21 @@ var Schema = db.Schema;
 
 var jobSchema = new Schema({
   job_id:  { type: String,required: true, index: { unique: true }},
-  business_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
-  customer_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
+  business_id:{ type: db.Schema.Types.ObjectId,required: true},
+  customer_id:{ type: db.Schema.Types.ObjectId,required: true},
   invoice_no:{ type: String,required: true, index: { unique: true }},
-  site_address:String,
-  payment_date: Date,
   job_value: String,
   app_fee_value: { type:Number, enum : [0,10],default: 10},
   total_job_value: { type:Number, default:0},
   app_fees:{ type:Number, default:0},
-  dispute_by:Number,
+  dispute_by:{ type:String, default:null},
   resolve_dispute:{ type:Number, default:0},
   fill_job:{ type:Number, default:0},
   status:{ type: Number,enum : [0,1,2,3,4,5,6],default: 1},
   isDeleted: { type: Number,enum : [0,1],default: 0},
   fund_status: {type:Number,enum:[0,1,2],default:0},
-  fund_request_id:{type:Number},
-  stripe_actualtransfer:{type:Number,enum:[0,1],default:0},
+  fund_request_id:{type:Number,default:0},
+  stripe_actual_transfer:{type:Number,enum:[0,1],default:0},
   draft_status:{type:Number,enum:[0,1],default:0},
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   accepted_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
@@ -36,10 +34,12 @@ jobSchema.index({_id: -1 });
 
 jobDetailsSchema = new Schema({
   job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
-  job_note:String,
-  name:String,
-  email:String,
-  phone:String,
+  job_note:{type:String,default:""},
+  name:{type:String,default:""},
+  email:{type:String,default:""},
+  phone:{type:String,default:""},
+  site_address:{type:String,default:""},
+  payment_date: Date,
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
 })
@@ -78,8 +78,8 @@ jobPaymentSchema.index({_id: -1,job_id:1 });
 
 module.exports = {
   jobSchema:jobSchema,
-  jobDetailsSchema:jobDetailsSchema.
+  jobDetailsSchema:jobDetailsSchema,
   jobAttachmantSchema:jobAttachmantSchema,
-  jobCommentSchema:jobCommentSchema
+  jobCommentSchema:jobCommentSchema,
   jobPaymentSchema:jobPaymentSchema
 }
