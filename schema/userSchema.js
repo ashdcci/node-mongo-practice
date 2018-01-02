@@ -10,6 +10,7 @@ var userSchema = new Schema({
   email:   { type: String,required: true, index: { unique: true }},
   password: String,
   access_token: String,
+  stripe_customer_id:String,
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   deleted_at: { type: String, default: null },
@@ -20,7 +21,7 @@ userSchema.index({ email: 1, _id: -1 });
 
 
 var PasswordResetSchema = new Schema({
-  email: { type: String,required: true, index: { unique: true }},
+  email: { type: String,required: true, index: { unique: false }},
   token: {type: String,required: true},
   created_at: { type: Date,required: true, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   expired_at: { type: String,required: true, default: moment().format('YYYY-MM-DD HH:mm:ss') },
@@ -31,7 +32,7 @@ var PasswordResetSchema = new Schema({
 PasswordResetSchema.index({ email: 1, _id: -1 });
 
 var ProfileSchema = new Schema({
-  user_id : { type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
+  user_id : { type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
   about: String,
   dob: String,
   gender:String,
@@ -43,7 +44,7 @@ var ProfileSchema = new Schema({
 
 
 var ImageSchema = new Schema({
-  user_id : { type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
+  user_id : { type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
   filename: String,
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
@@ -51,9 +52,20 @@ var ImageSchema = new Schema({
 })
 
 
+var cardSchema = new Schema({
+  user_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
+  card_id:String,
+  customer_id:String,
+  last_four: String,
+  created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
+  updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
+})
+
+
 module.exports = {
   userSchema:userSchema,
   PasswordResetSchema:PasswordResetSchema,
   ProfileSchema:ProfileSchema,
-  ImageSchema:ImageSchema
+  ImageSchema:ImageSchema,
+  cardSchema: cardSchema
 }

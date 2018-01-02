@@ -1,18 +1,20 @@
 var express = require('express')
 var router = express.Router()
-db = require('../config/db');
+db = require('../config/db')
 upload = require('../services/multer-s3')
-moment = require('moment');
-var mongoose = require('mongoose');
+moment = require('moment')
+var mongoose = require('mongoose')
+var stripe = require('../services/stripe')
 
 mailer = require('../services/mailer')
-const _ = require('lodash');
+const _ = require('lodash')
 Schema = require('../schema/userSchema')
 
 // model defination
 var User = db.model('User', Schema.userSchema)
 var Password = db.model('Password',Schema.PasswordResetSchema)
 var Profile  = db.model('Profile',Schema.ProfileSchema)
+var Card = db.model('Card',Schema.cardSchema)
 
 
 var crypto = require('crypto')
@@ -130,13 +132,21 @@ router.post('/register',function(req, res, next){
 
         }
 
-      })
-      .then(function(user_data){
-          return res.status(200).json({
-            status : 1,
-            msg : 'register process done',
-            user_data: user_data
+      }).then(function(userData){
+          return stripe.customers.create({
+            email:req.body.email
           })
+      })
+      .then(function(stripe_data){
+
+        return User.findOneAndUpdate({email:req.body.email},{ stripe_customer_id:stripe_data.id },{upsert:false})
+
+      }).then(function(user_data){
+        return res.status(200).json({
+          status : 1,
+          msg : 'register process done',
+          user_data: user_data
+        })
       })
       .catch(function(err){
 
@@ -466,6 +476,190 @@ router.post('/reset-password',function(req, res, next){
    })
 
 
+ })
+
+
+ router.post('/card_details',authToken,checkcardNumber,function(req, res, next){
+
+
+   if(!req.body.card_number || !req.body.exp_month || !req.body.exp_year || !req.body.cvv){
+     return res.status(403).send({
+         success: 0,
+         message: 'required fields are missing'
+     });
+   }
+
+
+   tomodel = {}
+   email_field = ''
+
+   user_doc = {}
+
+   User.findOne({access_token:req.headers['x-access-token']}).exec().then(function(doc){
+      if(doc==null){
+        throw({err_obj:2})
+      }
+
+
+      user_doc = doc
+      tomodel.user_id = doc._id
+      tomodel.email = doc.email
+      email_field = doc.email
+
+    return stripe.tokens.create({
+        card: {
+          "number": req.body.card_number,
+          "exp_month": req.body.exp_month,
+          "exp_year": req.body.exp_year,
+          "cvc": req.body.cvv
+        }
+      })
+
+    }).then(function(token_number){
+
+      tomodel.last_four = token_number.card.last4
+      tomodel.card_id = token_number.card.id
+
+
+
+      if(user_doc.stripe_customer_id!=""){
+        return stripe.customers.createSource(user_doc.stripe_customer_id,{
+                source: token_number.id,
+              })
+      }else{
+        return stripe.customers.create({
+                email: email_field,
+                source: token_number.id,
+              })
+      }
+
+
+
+    }).then(function(customer){
+
+      tomodel.customer_id = (user_doc.stripe_customer_id!="") ? user_doc.stripe_customer_id : customer.id
+      var card_data = new Card(tomodel)
+      return card_data.save()
+
+    }).then(function(card_user){
+
+      return res.status(200).json({
+        status:1,
+        msg: "card data saved on stripe"
+      })
+
+    }).catch(function(err){
+
+      return res.status(500).json({
+        status:0,
+        msg: "problam in fetch data1"
+      })
+    })
+
+
+ })
+
+
+ function checkcardNumber(req,res, next){
+
+   if(req.body.check==0){
+     if(!req.body.card_number || !req.body.exp_month || !req.body.exp_year || !req.body.cvv){
+       return res.status(403).send({
+           success: 0,
+           message: 'required fields are missing'
+       });
+     }
+
+
+
+   }else{
+     if(!req.body.card_id){
+       return res.status(403).send({
+           success: 0,
+           message: 'required fields are missing'
+       });
+     }
+
+   }
+
+
+
+
+
+    User.findOne({access_token:req.headers['x-access-token']}).exec().then(function(doc){
+       if(doc==null){
+         throw({err_obj:2})
+       }
+
+       if(req.body.check==0){
+         query = {user_id:mongoose.Types.ObjectId(doc._id),last_four:req.body.card_number.substr(12,4),customer_id:doc.stripe_customer_id}
+       }else{
+         query = {user_id:mongoose.Types.ObjectId(doc._id),card_id:req.body.card_id}
+       }
+
+
+        return Card.findOne(query)
+     }).then(function(card_data){
+        if(card_data!=null){
+
+          if(req.body.check==0){
+            return res.status(400).json({
+              status:0,
+              msg:"card already exists"
+            })
+          }else{
+            next();
+          }
+
+
+        }
+        if(req.body.check==0){
+          next();
+        }else{
+          return res.status(400).json({
+            status:0,
+            msg:"card details not exists"
+          })
+        }
+     }).catch(function(err){
+        return res.status(500).json({
+          status:0,
+          msg:"failed to retrived user card data"
+        })
+     })
+
+ }
+
+ router.delete('/delete_card',authToken,checkcardNumber,function(req, res, next){
+
+      if(!req.body.card_id){
+        return res.status(403).send({
+            success: 0,
+            message: 'required fields are missing'
+        });
+      }
+
+    tomodel = {}
+    User.findOne({access_token:req.headers['x-access-token']}).exec().then(function(doc){
+        if(doc==null){
+          throw({err_obj:2})
+        }
+        tomodel.user_id = doc._id
+        return stripe.customers.deleteCard(doc.stripe_customer_id,req.body.card_id);
+    }).then(function(delete_card_data){
+        return Card.remove({user_id:mongoose.Types.ObjectId(tomodel.user_id),card_id:req.body.card_id})
+    }).then(function(){
+      return res.status(200).json({
+        status:1,
+        msg: "card data removed on system"
+      })
+    }).catch(function(err){
+      console.log(err);
+      return res.status(500).json({
+        status:0,
+        msg:"failed to delete user card data"
+      })
+    })
  })
 
 

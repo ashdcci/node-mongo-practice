@@ -8,6 +8,7 @@ var mongoose = require('mongoose');
 storage = require('../services/multer')
 var upload_multi = require('../services/multer')
 var upload_file = upload_multi.array('image', 12)
+var stripe = require('../services/stripe')
 
 mailer = require('../services/mailer')
 const _ = require('lodash');
@@ -317,7 +318,7 @@ router.post('/job-attachment', authToken, function(req, res, next) {
 
             return res.json({
               status: 1,
-              'filename':req.files[0].filename,
+              filename:req.files[0].filename,
               msg: 'file attach successfully'
             })
 
@@ -329,6 +330,15 @@ router.post('/job-attachment', authToken, function(req, res, next) {
 
 
   })
+
+  return
+})
+
+
+
+router.put('/accept_pay_job',function(req,res,next){
+
+
 
   return
 })
