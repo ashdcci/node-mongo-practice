@@ -26,47 +26,52 @@ var jobSchema = new Schema({
   accepted_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   raised_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   closed_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
-  updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
+  updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
+  deleted_at:{ type: Date, default: null }
 });
 jobSchema.index({_id: -1 });
 
 
 
 jobDetailsSchema = new Schema({
-  job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
+  job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
   job_note:{type:String,default:""},
   name:{type:String,default:""},
   email:{type:String,default:""},
   phone:{type:String,default:""},
   site_address:{type:String,default:""},
   payment_date: Date,
+  deleted_at: { type: String, default: null },
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
 })
 
 
 jobAttachmantSchema = new Schema({
-  job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
+  job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
   filename:String,
   original_name:String,
+  deleted_at: { type: String, default: null },
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
 })
 
 jobCommentSchema = new Schema({
-  job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
-  user_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
+  job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
+  user_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
   job_status:{ type: Number,enum : [0,1,2,3,4,5,6],default: 1},
   comment:String,
+  deleted_at: { type: String, default: null },
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
 })
 
 jobPaymentSchema = new Schema({
-  job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
-  user_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: true }},
+  job_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
+  user_id:{ type: db.Schema.Types.ObjectId,required: true, index: { unique: false }},
   charge_id: String,
   type:{ type: Number,default: 0},
+  deleted_at: { type: String, default: null },
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
 })
