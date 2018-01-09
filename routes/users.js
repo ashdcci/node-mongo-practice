@@ -485,7 +485,7 @@ router.post('/reset-password',function(req, res, next){
    if(!req.body.card_number || !req.body.exp_month || !req.body.exp_year || !req.body.cvv){
      return res.status(403).send({
          success: 0,
-         message: 'required fields are missing'
+         message: 'required fields are missing2'
      });
    }
 
@@ -520,9 +520,10 @@ router.post('/reset-password',function(req, res, next){
       tomodel.last_four = token_number.card.last4
       tomodel.card_id = token_number.card.id
 
+      console.log(user_doc)
+      console.log(token_number)
 
-
-      if(user_doc.stripe_customer_id!=""){
+      if(user_doc.stripe_customer_id!=null){
         return stripe.customers.createSource(user_doc.stripe_customer_id,{
                 source: token_number.id,
               })
@@ -537,7 +538,7 @@ router.post('/reset-password',function(req, res, next){
 
     }).then(function(customer){
 
-      tomodel.customer_id = (user_doc.stripe_customer_id!="") ? user_doc.stripe_customer_id : customer.id
+      tomodel.customer_id = (user_doc.stripe_customer_id!=null) ? user_doc.stripe_customer_id : customer.id
       var card_data = new Card(tomodel)
       return card_data.save()
 
@@ -549,7 +550,7 @@ router.post('/reset-password',function(req, res, next){
       })
 
     }).catch(function(err){
-
+      console.log(err)
       return res.status(500).json({
         status:0,
         msg: "problam in fetch data1"

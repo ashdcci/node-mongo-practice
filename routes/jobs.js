@@ -18,6 +18,7 @@ UserSchema = require('../schema/userSchema')
 
 // model defination
 User = db.model('User', UserSchema.userSchema)
+Card = db.model('Card', UserSchema.cardSchema)
 Job = db.model('Job', JobSchema.jobSchema)
 jobDetailsSchema = db.model('jobDetails', JobSchema.jobDetailsSchema)
 jobDetails = db.model('jobDetails', JobSchema.jobDetailsSchema)
@@ -401,7 +402,7 @@ router.delete('/delete_job', authToken, function(req, res, next) {
           }
         }, {
           upsert: false
-        } , function(err4, doc4) {
+        }, function(err4, doc4) {
           callback(err4, doc4);
         })
       },
@@ -451,7 +452,7 @@ router.delete('/delete_job', authToken, function(req, res, next) {
 })
 
 
-router.put('/cancel_job',authToken, function(req, res, next) {
+router.put('/cancel_job', authToken, function(req, res, next) {
 
   if (!req.body.job_id) {
     return res.status(400).json({
@@ -461,8 +462,7 @@ router.put('/cancel_job',authToken, function(req, res, next) {
   }
 
 
-  Job.aggregate([
-    {
+  Job.aggregate([{
       "$lookup": {
         "from": "users",
         "localField": "customer_id",
@@ -472,61 +472,87 @@ router.put('/cancel_job',authToken, function(req, res, next) {
     },
     {
       "$match": {
-        "_id":mongoose.Types.ObjectId(req.body.job_id),
-         "users.access_token":req.headers['x-access-token']
+        "_id": mongoose.Types.ObjectId(req.body.job_id),
+        "users.access_token": req.headers['x-access-token']
       }
     },
-    {$unwind: {'path': '$users',preserveNullAndEmptyArrays: true,includeArrayIndex: "arrayIndex"}},
+    {
+      $unwind: {
+        'path': '$users',
+        preserveNullAndEmptyArrays: true,
+        includeArrayIndex: "arrayIndex"
+      }
+    },
     {
       "$project": {
         "_id": "$_id",
-        "status":"$status",
-        "customer_id":"$customer_id",
-        email: { $ifNull: [ "$users.email", "" ] },
+        "status": "$status",
+        "customer_id": "$customer_id",
+        email: {
+          $ifNull: ["$users.email", ""]
+        },
 
       }
     }
-  ],function(err1,rows){
+  ], function(err1, rows) {
 
-    if(err1){
+    if (err1) {
       return res.status(500).json({
-        status:0,
-        msg:'problam in fetch data'
+        status: 0,
+        msg: 'problam in fetch data'
       })
     }
 
 
-    if(rows.length > 0){
+    if (rows.length > 0) {
 
 
-      if(rows[0].status===2){
-        return res.json({ status: 0,msg:"Sorry "+rows[0].email+" has already accepted this job. Please refresh the screen and use 'CANCEL & REFUND' instead"});
-      }else if(rows[0].status===6){
-        return res.json({ status: 0,msg:"Sorry "+rows[0].email+" has already declined this job."});
-      }else if(rows[0].status===4){
-        return res.json({ status: 0,msg:"Sorry "+rows[0].email+" has already closed this job."});
-      }else if(rows[0].status===5){
-        return res.json({ status: 0,msg:"Sorry this job has already cancelled."});
-      }else{
-        Job.update({_id:mongoose.Types.ObjectId(rows[0]._id)},{status:5},{upsert:false},function(err2,doc2){
-            if(err2){
-              return res.status(500).json({
-                status:0,
-                msg:"problem in update job data"
-              })
-            }
-
+      if (rows[0].status === 2) {
+        return res.json({
+          status: 0,
+          msg: "Sorry " + rows[0].email + " has already accepted this job. Please refresh the screen and use 'CANCEL & REFUND' instead"
+        });
+      } else if (rows[0].status === 6) {
+        return res.json({
+          status: 0,
+          msg: "Sorry " + rows[0].email + " has already declined this job."
+        });
+      } else if (rows[0].status === 4) {
+        return res.json({
+          status: 0,
+          msg: "Sorry " + rows[0].email + " has already closed this job."
+        });
+      } else if (rows[0].status === 5) {
+        return res.json({
+          status: 0,
+          msg: "Sorry this job has already cancelled."
+        });
+      } else {
+        Job.update({
+          _id: mongoose.Types.ObjectId(rows[0]._id)
+        }, {
+          status: 5
+        }, {
+          upsert: false
+        }, function(err2, doc2) {
+          if (err2) {
             return res.status(500).json({
-              status:1,
-              msg:"Job Cancelled"
+              status: 0,
+              msg: "problem in update job data"
             })
+          }
+
+          return res.status(500).json({
+            status: 1,
+            msg: "Job Cancelled"
+          })
         })
       }
 
-    }else{
+    } else {
       return res.status(404).json({
-        status:0,
-        msg:' user is not associate with this job'
+        status: 0,
+        msg: ' user is not associate with this job'
       })
     }
 
@@ -538,7 +564,7 @@ router.put('/cancel_job',authToken, function(req, res, next) {
 
 
 
-router.put('/decline_job',authToken, function(req, res, next) {
+router.put('/decline_job', authToken, function(req, res, next) {
 
   if (!req.body.job_id || !req.body.comment) {
     return res.status(400).json({
@@ -548,8 +574,7 @@ router.put('/decline_job',authToken, function(req, res, next) {
   }
 
 
-  Job.aggregate([
-    {
+  Job.aggregate([{
       "$lookup": {
         "from": "users",
         "localField": "business_id",
@@ -559,63 +584,80 @@ router.put('/decline_job',authToken, function(req, res, next) {
     },
     {
       "$match": {
-        "_id":mongoose.Types.ObjectId(req.body.job_id),
-         "users.access_token":req.headers['x-access-token']
+        "_id": mongoose.Types.ObjectId(req.body.job_id),
+        "users.access_token": req.headers['x-access-token']
       }
     },
-    {$unwind: {'path': '$users',preserveNullAndEmptyArrays: true,includeArrayIndex: "arrayIndex"}},
+    {
+      $unwind: {
+        'path': '$users',
+        preserveNullAndEmptyArrays: true,
+        includeArrayIndex: "arrayIndex"
+      }
+    },
     {
       "$project": {
         "_id": "$_id",
-        "status":"$status",
-        "business_id":"$business_id",
-        email: { $ifNull: [ "$users.email", "" ] },
+        "status": "$status",
+        "business_id": "$business_id",
+        email: {
+          $ifNull: ["$users.email", ""]
+        },
 
       }
     }
-  ],function(err1,rows){
+  ], function(err1, rows) {
 
-    if(err1){
+    if (err1) {
       return res.status(500).json({
-        status:0,
-        msg:'problam in fetch data'
+        status: 0,
+        msg: 'problam in fetch data'
       })
     }
 
 
-    if(rows.length > 0){
+    if (rows.length > 0) {
 
 
-      if(rows[0].status===5){
-        return res.json({ status: 0,msg:"Sorry this job has already cancelled."});
-      }else{
-        Job.update({_id:mongoose.Types.ObjectId(rows[0]._id)},{status:6},{upsert:false},function(err2,doc2){
-            if(err2){
-              return res.status(500).json({
-                status:0,
-                msg:"problem in update job data"
-              })
-            }
-
-            tomodel = {}
-            tomodel.comment = req.body.comment
-            tomodel.job_id = rows[0]._id
-            tomodel.user_id = rows[0].business_id
-            tomodel.status = 6
-            job_comment_data = new jobComment(tomodel)
-            job_comment_data.save()
-
+      if (rows[0].status === 5) {
+        return res.json({
+          status: 0,
+          msg: "Sorry this job has already cancelled."
+        });
+      } else {
+        Job.update({
+          _id: mongoose.Types.ObjectId(rows[0]._id)
+        }, {
+          status: 6
+        }, {
+          upsert: false
+        }, function(err2, doc2) {
+          if (err2) {
             return res.status(500).json({
-              status:1,
-              msg:"Job Cancelled"
+              status: 0,
+              msg: "problem in update job data"
             })
+          }
+
+          tomodel = {}
+          tomodel.comment = req.body.comment
+          tomodel.job_id = rows[0]._id
+          tomodel.user_id = rows[0].business_id
+          tomodel.status = 6
+          job_comment_data = new jobComment(tomodel)
+          job_comment_data.save()
+
+          return res.status(500).json({
+            status: 1,
+            msg: "Job Cancelled"
+          })
         })
       }
 
-    }else{
+    } else {
       return res.status(404).json({
-        status:0,
-        msg:' user is not associate with this job'
+        status: 0,
+        msg: ' user is not associate with this job'
       })
     }
 
@@ -626,9 +668,9 @@ router.put('/decline_job',authToken, function(req, res, next) {
 
 
 
-router.put('/accept_pay_job',authToken, checkCardDetails,function(req, res, next){
+router.put('/accept_pay_job', authToken, checkCardDetails, function(req, res, next) {
 
-  if (!req.body.job_id || !req.body.stripe_customer_id || !req.body.card_id || !req.body.amount) {
+  if (!req.body.job_id || !req.body.card_id || !req.body.amount) {
     return res.status(400).json({
       status: 0,
       msg: 'required fields are missing'
@@ -636,84 +678,148 @@ router.put('/accept_pay_job',authToken, checkCardDetails,function(req, res, next
   }
 
 
-  Job.aggregate([
-    {
+  Job.aggregate([{
       "$lookup": {
         "from": "users",
         "localField": "business_id",
         "foreignField": "_id",
         "as": "users"
+      },
+
+    },
+    {
+      "$lookup": {
+        "from": "cards",
+        "localField": "business_id",
+        "foreignField": "user_id",
+        "as": "cards"
       }
     },
     {
       "$match": {
-        "_id":mongoose.Types.ObjectId(req.body.job_id),
-         "users.access_token":req.headers['x-access-token']
+        "_id": mongoose.Types.ObjectId(req.body.job_id),
+        "users.access_token": req.headers['x-access-token']
       }
     },
-    {$unwind: {'path': '$users',preserveNullAndEmptyArrays: true,includeArrayIndex: "arrayIndex"}},
+    {
+      $unwind: {
+        'path': '$users',
+        preserveNullAndEmptyArrays: true,
+        includeArrayIndex: "arrayIndex"
+      }
+    },
+    {
+      $unwind: {
+        'path': '$cards',
+        preserveNullAndEmptyArrays: true,
+        includeArrayIndex: "arrayIndex"
+      }
+    },
     {
       "$project": {
         "_id": "$_id",
-        "status":"$status",
-        "business_id":"$business_id",
-        email: { $ifNull: [ "$users.email", "" ] },
+        "status": "$status",
+        "business_id": "$business_id",
+        "stripe_customer_id": {
+          $ifNull: ["$users.stripe_customer_id", ""]
+        },
+        "card_id": {
+          $ifNull: ["$cards.card_id", ""]
+        },
+        "email": {
+          $ifNull: ["$users.email", ""]
+        },
 
       }
     }
-  ],function(err1,rows){
+  ], function(err1, rows) {
 
-    if(err1){
+    if (err1) {
       return res.status(500).json({
-        status:0,
-        msg:'problam in fetch data'
+        status: 0,
+        msg: 'problam in fetch data'
       })
     }
 
 
-    if(rows.length > 0){
+    if (rows.length > 0) {
+
+      if (!rows[0].stripe_customer_id || !rows[0].card_id) {
+        return res.status(500).json({
+          status: 0,
+          msg: 'card details is missing for business user'
+        })
+      }
 
 
-      if(rows[0].status===5 || rows[0].status===6 || rows[0].status===4 || rows[0].status===3 || rows[0].status===2){
-        return res.json({ status: 0,msg:"Sorry this can`t accept job and pay."});
-      }else{
+
+
+      if (rows[0].status === 5 || rows[0].status === 6 || rows[0].status === 4 || rows[0].status === 3 || rows[0].status === 2) {
+        return res.json({
+          status: 0,
+          msg: "Sorry this can`t accept job and pay."
+        });
+      } else {
+
+        charge_id = '';
 
         stripe.charges.create({
-          amount: amount,
+          amount: req.body.amount*100,
           currency: 'aud',
-          customer: req.body.stripe_customer_id,
-          card:req.body.card_id
-        }).then(function(charge){
-          console.log(charge)
+          customer: rows[0].stripe_customer_id,
+          card: rows[0].card_id
+        }).then(function(charge) {
+          charge_id = charge.id
 
-          
+          tomodel = {}
+          tomodel.job_id = rows[0]._id
+          tomodel.user_id = rows[0].business_id
+          tomodel.charge_id = charge_id
+          job_payment_data = new jobPaymentSchema(tomodel)
+          job_payment_data.save()
 
-        }).catch(function(stripe_err){
-            console.log(stripe_err)
-        });
 
-        return
-        Job.update({_id:mongoose.Types.ObjectId(rows[0]._id)},{status:2},{upsert:false},function(err2,doc2){
-            if(err2){
+          Job.update({
+            _id: mongoose.Types.ObjectId(rows[0]._id)
+          }, {
+            status: 2
+          }, {
+            upsert: false
+          }, function(err2, doc2) {
+            if (err2) {
               return res.status(500).json({
-                status:0,
-                msg:"problem in update job data"
+                status: 0,
+                msg: "problem in update job data"
               })
             }
 
 
 
-            return res.status(500).json({
-              status:1,
-              msg:"Job accepted"
+
+            return res.status(200).json({
+              status: 1,
+              msg: "Job accepted"
             })
-        })
+          })
+
+
+
+        }).catch(function(stripe_err) {
+
+          return res.status(500).json({
+            status: 0,
+            msg: ' Problam in stripe payment operation'
+          })
+        });
+
+
+        return
       }
 
-    }else{
+    } else {
       return res.status(404).json({
-        status:0,
-        msg:' user is not associate with this job'
+        status: 0,
+        msg: ' user is not associate with this job'
       })
     }
 
@@ -722,15 +828,147 @@ router.put('/accept_pay_job',authToken, checkCardDetails,function(req, res, next
 
 
 
-    return
+  return
 })
 
 
-  function checkCardDetails(req, res, next){
-    next()
+function checkCardDetails(req, res, next) {
+
+  if (!req.body.card_id) {
+    return res.status(400).json({
+      status: 0,
+      msg: 'card id missing'
+    })
   }
 
+  Card.findOne({
+    _id: req.body.card_id
+  }, function(err, doc) {
+    if (err) {
+      return res.status(500).json({
+        status: 0,
+        msg: 'problam in get card details'
+      })
+    }
+
+    if (doc == null) {
+      return res.status(400).json({
+        status: 0,
+        msg: 'card details not authenticated'
+      })
+    } else {
+      next()
+    }
+    return
+  })
+
+
+}
+
+
+router.put('/change-job-status', function(req, res, next) {
+  Job.update({
+    _id: req.body.job_id
+  }, {
+    status:req.body.status
+  }, {
+    upsert: false
+  }, function(err,doc) {
+
+    if (err) {
+      return res.status(500).json({
+        status: 0,
+        msg: 'problam in update status'
+      })
+    }
+
+    return res.status(200).json({
+      status: 0,
+      msg: ' job status changed '
+    })
+  })
+})
 
 
 
-module.exports = router
+  router.post('/get_business_jobs_json_data',authToken,function(req, res, next){
+
+
+    Job.aggregate([{
+        "lookup":{
+          "from":"users",
+          "localField": "business_id",
+          "foreignField": "_id",
+          "as": "users"
+        }
+      },
+      {
+        $unwind: {
+          'path': '$users',
+          preserveNullAndEmptyArrays: true,
+          includeArrayIndex: "arrayIndex"
+        }
+      },
+      {
+        "lookup":{
+          "from":"jobdetails",
+          "localField": "_id",
+          "foreignField": "job_id",
+          "as": "jobdetails"
+        }
+      },
+      {
+        $unwind: {
+          'path': '$jobdetails',
+          preserveNullAndEmptyArrays: true,
+          includeArrayIndex: "arrayIndex"
+        }
+      },
+      {
+        "$project": {
+          "_id": "$_id",
+          "status": "$status",
+          "business_id": "$business_id",
+          "invoice_no": "$invoice_no",
+          "job_value": "$job_value",
+          "status": "$status",
+          "payment_date":{$ifNull:["$jobdetails.payment_date",""]},
+          "site_address":{$ifNull:["$jobdetails.site_address",""]},
+          "phone":{$ifNull:["$jobdetails.phone",""]},
+          "name":{$ifNull:["$jobdetails.name",""]},
+          "business_email": {
+            $ifNull: ["$users.email", ""]
+          }
+
+        }
+      }
+
+    ],function(err,doc){
+
+      if(err){
+        return res.status(500).json({
+          status:0,
+          msg: 'problam in fetch job data'
+        })
+      }
+
+
+      return res.status(200).json({
+        status:1,
+        count:Job.count(),
+        data:doc
+
+      })
+
+
+
+
+    })
+
+
+
+    return
+  })
+
+
+  module.exports = router
