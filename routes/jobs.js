@@ -892,10 +892,17 @@ router.put('/change-job-status', function(req, res, next) {
 
 
   router.post('/get_business_jobs_json_data',authToken,function(req, res, next){
+    jobs_count = 0
+    Job.count().exec(function(err2,doc2){ jobs_count = doc2})
+
+    tomodel_cond = {
+      'users.access_token':req.headers['x-access-token']
+    }
+
 
 
     Job.aggregate([{
-        "lookup":{
+        "$lookup":{
           "from":"users",
           "localField": "business_id",
           "foreignField": "_id",
@@ -910,7 +917,7 @@ router.put('/change-job-status', function(req, res, next) {
         }
       },
       {
-        "lookup":{
+        "$lookup":{
           "from":"jobdetails",
           "localField": "_id",
           "foreignField": "job_id",
@@ -925,26 +932,39 @@ router.put('/change-job-status', function(req, res, next) {
         }
       },
       {
+        $match:tomodel_cond
+      },
+      {
         "$project": {
           "_id": "$_id",
+          created_at: "$jobs.created_at",
           "status": "$status",
           "business_id": "$business_id",
           "invoice_no": "$invoice_no",
           "job_value": "$job_value",
-          "status": "$status",
+          // "status": {
+          //             "$switch": {
+          //                 "branches": [
+          //                   { "case": { $eq: [ "$status", 1 ] }, then: "Open" },
+          //                   { "case": { $eq: [ "$status", 2 ] }, then: "Accepted" },
+          //                 ],
+          //                 "default": "Else Status"
+          //             }
+          //           },
           "payment_date":{$ifNull:["$jobdetails.payment_date",""]},
           "site_address":{$ifNull:["$jobdetails.site_address",""]},
           "phone":{$ifNull:["$jobdetails.phone",""]},
           "name":{$ifNull:["$jobdetails.name",""]},
           "business_email": {
             $ifNull: ["$users.email", ""]
-          }
+          },
 
         }
-      }
+      },
+      // { $sort : { created_at : -1 } }
 
-    ],function(err,doc){
-
+    ]).skip(0).limit(3).exec(function(err,doc){
+      console.log(err)
       if(err){
         return res.status(500).json({
           status:0,
@@ -952,16 +972,12 @@ router.put('/change-job-status', function(req, res, next) {
         })
       }
 
-
       return res.status(200).json({
         status:1,
-        count:Job.count(),
+        count:jobs_count,
         data:doc
 
       })
-
-
-
 
     })
 
