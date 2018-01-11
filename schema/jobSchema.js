@@ -24,9 +24,9 @@ var jobSchema = new Schema({
   draft_status:{type:Number,enum:[0,1],default:0},
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
   accepted_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
-  raised_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
-  closed_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
-  updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },
+  raised_at: { type: Date, default: null },
+  closed_at: { type: Date, default: null },
+  updated_at: { type: Date, default: null },
   deleted_at:{ type: Date, default: null }
 });
 jobSchema.index({_id: -1 });

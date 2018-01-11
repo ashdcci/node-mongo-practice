@@ -9,6 +9,7 @@ var userSchema = new Schema({
   last_name: String,
   email:   { type: String,required: true, index: { unique: true }},
   password: String,
+  user_type:{type:Number,default:0},
   access_token: String,
   stripe_customer_id:String,
   created_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') },

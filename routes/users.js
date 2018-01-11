@@ -100,7 +100,7 @@ router.get('/users/:id',function(req, res, next){
 
 
 router.post('/register',function(req, res, next){
-    if(!req.body.email || !req.body.password){
+    if(!req.body.email || !req.body.password || !req.body.user_type){
       return res.status(400).json({
         status:0,
         msg:'required field are missing'
@@ -125,6 +125,9 @@ router.post('/register',function(req, res, next){
 
           tomodel.email =  req.body.email
           tomodel.password =  pwd
+          tomodel.user_type = req.body.user_type
+          tomodel.first_name = req.body.firstname
+          tomodel.last_name = req.body.lastname
           tomodel.access_token= createToken(req.body.email)
 
           var user_data = new User(tomodel)
@@ -133,22 +136,23 @@ router.post('/register',function(req, res, next){
         }
 
       }).then(function(userData){
-          return stripe.customers.create({
+          stripe.customers.create({
             email:req.body.email
+          }).then(function(stripe_data){
+            return User.findOneAndUpdate({email:req.body.email},{ stripe_customer_id:stripe_data.id },{upsert:false})
+          }).catch(function(err){
+            console.log(err)
           })
-      })
-      .then(function(stripe_data){
 
-        return User.findOneAndUpdate({email:req.body.email},{ stripe_customer_id:stripe_data.id },{upsert:false})
 
-      }).then(function(user_data){
-        return res.status(200).json({
-          status : 1,
-          msg : 'register process done',
-          user_data: user_data
-        })
-      })
-      .catch(function(err){
+          return res.status(200).json({
+            status : 1,
+            msg : 'register process done',
+            user_data: userData
+          })
+
+
+      }).catch(function(err){
 
         if(err.err_obj){
 

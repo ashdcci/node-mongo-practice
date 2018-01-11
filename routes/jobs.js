@@ -28,7 +28,140 @@ jobCommentSchema = db.model('jobComment', JobSchema.jobCommentSchema)
 jobPaymentSchema = db.model('jobPayment', JobSchema.jobPaymentSchema)
 
 
-router.post('/create-job', authToken, function(req, res, next) {
+
+/**
+ * Middleware defination start
+ */
+ function authBusinessToken(req, res, next) {
+
+
+   // check header or url parameters or post parameters for token
+   var token = req.body.token || req.query.token || req.headers['x-access-token'];
+
+   // decode token
+   if (token) {
+
+     // verifies secret and checks exp
+     jwt.verify(token, superSecret, function(err, decoded) {
+       if (err) {
+         return res.status(400).json({
+           status: 0,
+           msg: 'Failed to authenticate token.'
+         });
+       } else {
+         // if everything is good, save to request for use in other routes
+         req.decoded = decoded;
+         User.findOne({
+           access_token: token
+         }, function(err1, doc) {
+
+           if (err1) {
+             return res.status(400).json({
+               status: 0,
+               msg: 'Failed to authenticate token.'
+             });
+           } else if (doc == null) {
+             return res.status(400).json({
+               status: 0,
+               msg: 'Failed to authenticate token.'
+             });
+           }else if(doc.user_type==0){
+             return res.status(400).json({
+               status: 0,
+               msg: 'Failed to authenticate User.'
+             });
+           }
+           next();
+
+         })
+         return
+       }
+     });
+
+   } else {
+
+     // if there is no token
+     // return an error
+     return res.status(403).json({
+       status: 0,
+       msg: 'No token provided.'
+     });
+
+   }
+
+
+
+ }
+
+
+ function authCustomerToken(req, res, next) {
+
+
+   // check header or url parameters or post parameters for token
+   var token = req.body.token || req.query.token || req.headers['x-access-token'];
+
+   // decode token
+   if (token) {
+
+     // verifies secret and checks exp
+     jwt.verify(token, superSecret, function(err, decoded) {
+       if (err) {
+         return res.status(400).json({
+           status: 0,
+           msg: 'Failed to authenticate token.'
+         });
+       } else {
+         // if everything is good, save to request for use in other routes
+         req.decoded = decoded;
+         User.findOne({
+           access_token: token
+         }, function(err1, doc) {
+
+           if (err1) {
+             return res.status(400).json({
+               status: 0,
+               msg: 'Failed to authenticate token.'
+             });
+           } else if (doc == null) {
+             return res.status(400).json({
+               status: 0,
+               msg: 'Failed to authenticate token.'
+             });
+           }else if(doc.user_type==1){
+             return res.status(400).json({
+               status: 0,
+               msg: 'Failed to authenticate User.'
+             });
+           }
+           next();
+
+         })
+         return
+       }
+     });
+
+   } else {
+
+     // if there is no token
+     // return an error
+     return res.status(403).json({
+       status: 0,
+       msg: 'No token provided.'
+     });
+
+   }
+
+
+
+ }
+
+
+/**
+ * Middleware defination ends here
+ */
+
+
+router.post('/create-job', authCustomerToken, function(req, res, next) {
 
   /**
    * 1. get user id from token
@@ -50,6 +183,11 @@ router.post('/create-job', authToken, function(req, res, next) {
       return res.status(500).json({
         status: 0,
         msg: "user not exist on system"
+      })
+    } else if (doc.user_type == 1) {
+      return res.status(500).json({
+        status: 0,
+        msg: "user not authenticate to create job on system"
       })
     }
 
@@ -123,64 +261,9 @@ router.post('/create-job', authToken, function(req, res, next) {
 
 
 
-function authToken(req, res, next) {
 
 
-  // check header or url parameters or post parameters for token
-  var token = req.body.token || req.query.token || req.headers['x-access-token'];
-
-  // decode token
-  if (token) {
-
-    // verifies secret and checks exp
-    jwt.verify(token, superSecret, function(err, decoded) {
-      if (err) {
-        return res.status(400).json({
-          status: 0,
-          msg: 'Failed to authenticate token.'
-        });
-      } else {
-        // if everything is good, save to request for use in other routes
-        req.decoded = decoded;
-        User.findOne({
-          access_token: token
-        }, function(err1, doc) {
-
-          if (err1) {
-            return res.status(400).json({
-              status: 0,
-              msg: 'Failed to authenticate token.'
-            });
-          } else if (doc == null) {
-            return res.status(400).json({
-              status: 0,
-              msg: 'Failed to authenticate token.'
-            });
-          }
-          next();
-
-        })
-        return
-      }
-    });
-
-  } else {
-
-    // if there is no token
-    // return an error
-    return res.status(403).json({
-      status: 0,
-      msg: 'No token provided.'
-    });
-
-  }
-
-
-
-}
-
-
-router.put('/edit-job', authToken, function(req, res, next) {
+router.put('/edit-job', authCustomerToken, function(req, res, next) {
   if (!req.body.id || !req.body.invoice_no || !req.body.job_value) {
     return res.status(400).json({
       status: 0,
@@ -266,7 +349,7 @@ router.put('/edit-job', authToken, function(req, res, next) {
 })
 
 
-router.post('/job-attachment', authToken, function(req, res, next) {
+router.post('/job-attachment', authCustomerToken, function(req, res, next) {
 
   if (!req.headers['job_id']) {
     return res.status(400).json({
@@ -340,7 +423,7 @@ router.post('/job-attachment', authToken, function(req, res, next) {
 
 
 
-router.delete('/delete_job', authToken, function(req, res, next) {
+router.delete('/delete_job', authCustomerToken, function(req, res, next) {
 
 
 
@@ -452,7 +535,7 @@ router.delete('/delete_job', authToken, function(req, res, next) {
 })
 
 
-router.put('/cancel_job', authToken, function(req, res, next) {
+router.put('/cancel_job', authCustomerToken, function(req, res, next) {
 
   if (!req.body.job_id) {
     return res.status(400).json({
@@ -564,7 +647,7 @@ router.put('/cancel_job', authToken, function(req, res, next) {
 
 
 
-router.put('/decline_job', authToken, function(req, res, next) {
+router.put('/decline_job', authBusinessToken, function(req, res, next) {
 
   if (!req.body.job_id || !req.body.comment) {
     return res.status(400).json({
@@ -668,7 +751,7 @@ router.put('/decline_job', authToken, function(req, res, next) {
 
 
 
-router.put('/accept_pay_job', authToken, checkCardDetails, function(req, res, next) {
+router.put('/accept_pay_job', authBusinessToken, checkCardDetails, function(req, res, next) {
 
   if (!req.body.job_id || !req.body.card_id || !req.body.amount) {
     return res.status(400).json({
@@ -764,7 +847,7 @@ router.put('/accept_pay_job', authToken, checkCardDetails, function(req, res, ne
         charge_id = '';
 
         stripe.charges.create({
-          amount: req.body.amount*100,
+          amount: req.body.amount * 100,
           currency: 'aud',
           customer: rows[0].stripe_customer_id,
           card: rows[0].card_id
@@ -870,10 +953,10 @@ router.put('/change-job-status', function(req, res, next) {
   Job.update({
     _id: req.body.job_id
   }, {
-    status:req.body.status
+    status: req.body.status
   }, {
     upsert: false
-  }, function(err,doc) {
+  }, function(err, doc) {
 
     if (err) {
       return res.status(500).json({
@@ -891,100 +974,126 @@ router.put('/change-job-status', function(req, res, next) {
 
 
 
-  router.post('/get_business_jobs_json_data',authToken,function(req, res, next){
-    jobs_count = 0
-    Job.count().exec(function(err2,doc2){ jobs_count = doc2})
+router.post('/get_business_jobs_json_data', authBusinessToken, function(req, res, next) {
+  jobs_count = 0
+  Job.count().exec(function(err2, doc2) {
+    jobs_count = doc2
+  })
 
-    tomodel_cond = {
-      'users.access_token':req.headers['x-access-token']
+  tomodel_cond = {
+    'users.access_token': req.headers['x-access-token']
+  }
+
+  if(req.body.invoice_no){
+
+    tomodel_cond.invoice_no = { $regex: req.body.invoice_no, $options: 'g' }
+  }
+
+
+console.log(tomodel_cond)
+  Job.aggregate([{
+      "$lookup": {
+        "from": "users",
+        "localField": "business_id",
+        "foreignField": "_id",
+        "as": "users"
+      }
+    },
+    {
+      $unwind: {
+        'path': '$users',
+        preserveNullAndEmptyArrays: true,
+        includeArrayIndex: "arrayIndex"
+      }
+    },
+    {
+      "$lookup": {
+        "from": "jobdetails",
+        "localField": "_id",
+        "foreignField": "job_id",
+        "as": "jobdetails"
+      }
+    },
+    {
+      $unwind: {
+        'path': '$jobdetails',
+        preserveNullAndEmptyArrays: true,
+        includeArrayIndex: "arrayIndex"
+      }
+    },
+    {
+      $match: tomodel_cond
+    },
+    {
+      "$project": {
+        "_id": "$_id",
+        "created_at": {
+          $ifNull: ["$job.created_at", ""]
+        },
+        // "status": "$status",
+        "business_id": "$business_id",
+        "invoice_no": "$invoice_no",
+        "job_value": "$job_value",
+        "status": {
+          "$switch": {
+            "branches": [{
+                "case": {
+                  $eq: ["$status", 1]
+                },
+                then: "Open"
+              },
+              {
+                "case": {
+                  $eq: ["$status", 2]
+                },
+                then: "Accepted"
+              },
+            ],
+            "default": "Else Status"
+          }
+        },
+        "payment_date": {
+          $ifNull: ["$jobdetails.payment_date", ""]
+        },
+        "site_address": {
+          $ifNull: ["$jobdetails.site_address", ""]
+        },
+        "phone": {
+          $ifNull: ["$jobdetails.phone", ""]
+        },
+        "name": {
+          $ifNull: ["$jobdetails.name", ""]
+        },
+        "business_email": {
+          $ifNull: ["$users.email", ""]
+        },
+
+      }
+    },
+    // { $sort : { created_at : -1 } }
+
+  ]).skip(0).limit(3).exec(function(err, doc) {
+    console.log(err)
+    if (err) {
+      return res.status(500).json({
+        status: 0,
+        msg: 'problam in fetch job data'
+      })
     }
 
-
-
-    Job.aggregate([{
-        "$lookup":{
-          "from":"users",
-          "localField": "business_id",
-          "foreignField": "_id",
-          "as": "users"
-        }
-      },
-      {
-        $unwind: {
-          'path': '$users',
-          preserveNullAndEmptyArrays: true,
-          includeArrayIndex: "arrayIndex"
-        }
-      },
-      {
-        "$lookup":{
-          "from":"jobdetails",
-          "localField": "_id",
-          "foreignField": "job_id",
-          "as": "jobdetails"
-        }
-      },
-      {
-        $unwind: {
-          'path': '$jobdetails',
-          preserveNullAndEmptyArrays: true,
-          includeArrayIndex: "arrayIndex"
-        }
-      },
-      {
-        $match:tomodel_cond
-      },
-      {
-        "$project": {
-          "_id": "$_id",
-          created_at: "$jobs.created_at",
-          "status": "$status",
-          "business_id": "$business_id",
-          "invoice_no": "$invoice_no",
-          "job_value": "$job_value",
-          // "status": {
-          //             "$switch": {
-          //                 "branches": [
-          //                   { "case": { $eq: [ "$status", 1 ] }, then: "Open" },
-          //                   { "case": { $eq: [ "$status", 2 ] }, then: "Accepted" },
-          //                 ],
-          //                 "default": "Else Status"
-          //             }
-          //           },
-          "payment_date":{$ifNull:["$jobdetails.payment_date",""]},
-          "site_address":{$ifNull:["$jobdetails.site_address",""]},
-          "phone":{$ifNull:["$jobdetails.phone",""]},
-          "name":{$ifNull:["$jobdetails.name",""]},
-          "business_email": {
-            $ifNull: ["$users.email", ""]
-          },
-
-        }
-      },
-      // { $sort : { created_at : -1 } }
-
-    ]).skip(0).limit(3).exec(function(err,doc){
-      console.log(err)
-      if(err){
-        return res.status(500).json({
-          status:0,
-          msg: 'problam in fetch job data'
-        })
-      }
-
-      return res.status(200).json({
-        status:1,
-        count:jobs_count,
-        data:doc
-
-      })
+    return res.status(200).json({
+      status: 1,
+      count: jobs_count,
+      data: doc
 
     })
 
-
-
-    return
   })
 
 
-  module.exports = router
+
+  return
+})
+
+
+module.exports = router
