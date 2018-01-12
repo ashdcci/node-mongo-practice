@@ -32,128 +32,128 @@ jobPaymentSchema = db.model('jobPayment', JobSchema.jobPaymentSchema)
 /**
  * Middleware defination start
  */
- function authBusinessToken(req, res, next) {
+function authBusinessToken(req, res, next) {
 
 
-   // check header or url parameters or post parameters for token
-   var token = req.body.token || req.query.token || req.headers['x-access-token'];
+  // check header or url parameters or post parameters for token
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
 
-   // decode token
-   if (token) {
+  // decode token
+  if (token) {
 
-     // verifies secret and checks exp
-     jwt.verify(token, superSecret, function(err, decoded) {
-       if (err) {
-         return res.status(400).json({
-           status: 0,
-           msg: 'Failed to authenticate token.'
-         });
-       } else {
-         // if everything is good, save to request for use in other routes
-         req.decoded = decoded;
-         User.findOne({
-           access_token: token
-         }, function(err1, doc) {
+    // verifies secret and checks exp
+    jwt.verify(token, superSecret, function(err, decoded) {
+      if (err) {
+        return res.status(400).json({
+          status: 0,
+          msg: 'Failed to authenticate token.'
+        });
+      } else {
+        // if everything is good, save to request for use in other routes
+        req.decoded = decoded;
+        User.findOne({
+          access_token: token
+        }, function(err1, doc) {
 
-           if (err1) {
-             return res.status(400).json({
-               status: 0,
-               msg: 'Failed to authenticate token.'
-             });
-           } else if (doc == null) {
-             return res.status(400).json({
-               status: 0,
-               msg: 'Failed to authenticate token.'
-             });
-           }else if(doc.user_type==0){
-             return res.status(400).json({
-               status: 0,
-               msg: 'Failed to authenticate User.'
-             });
-           }
-           next();
+          if (err1) {
+            return res.status(400).json({
+              status: 0,
+              msg: 'Failed to authenticate token.'
+            });
+          } else if (doc == null) {
+            return res.status(400).json({
+              status: 0,
+              msg: 'Failed to authenticate token.'
+            });
+          } else if (doc.user_type == 0) {
+            return res.status(400).json({
+              status: 0,
+              msg: 'Failed to authenticate User.'
+            });
+          }
+          next();
 
-         })
-         return
-       }
-     });
+        })
+        return
+      }
+    });
 
-   } else {
+  } else {
 
-     // if there is no token
-     // return an error
-     return res.status(403).json({
-       status: 0,
-       msg: 'No token provided.'
-     });
+    // if there is no token
+    // return an error
+    return res.status(403).json({
+      status: 0,
+      msg: 'No token provided.'
+    });
 
-   }
-
-
-
- }
-
-
- function authCustomerToken(req, res, next) {
-
-
-   // check header or url parameters or post parameters for token
-   var token = req.body.token || req.query.token || req.headers['x-access-token'];
-
-   // decode token
-   if (token) {
-
-     // verifies secret and checks exp
-     jwt.verify(token, superSecret, function(err, decoded) {
-       if (err) {
-         return res.status(400).json({
-           status: 0,
-           msg: 'Failed to authenticate token.'
-         });
-       } else {
-         // if everything is good, save to request for use in other routes
-         req.decoded = decoded;
-         User.findOne({
-           access_token: token
-         }, function(err1, doc) {
-
-           if (err1) {
-             return res.status(400).json({
-               status: 0,
-               msg: 'Failed to authenticate token.'
-             });
-           } else if (doc == null) {
-             return res.status(400).json({
-               status: 0,
-               msg: 'Failed to authenticate token.'
-             });
-           }else if(doc.user_type==1){
-             return res.status(400).json({
-               status: 0,
-               msg: 'Failed to authenticate User.'
-             });
-           }
-           next();
-
-         })
-         return
-       }
-     });
-
-   } else {
-
-     // if there is no token
-     // return an error
-     return res.status(403).json({
-       status: 0,
-       msg: 'No token provided.'
-     });
-
-   }
+  }
 
 
 
- }
+}
+
+
+function authCustomerToken(req, res, next) {
+
+
+  // check header or url parameters or post parameters for token
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
+
+  // decode token
+  if (token) {
+
+    // verifies secret and checks exp
+    jwt.verify(token, superSecret, function(err, decoded) {
+      if (err) {
+        return res.status(400).json({
+          status: 0,
+          msg: 'Failed to authenticate token.'
+        });
+      } else {
+        // if everything is good, save to request for use in other routes
+        req.decoded = decoded;
+        User.findOne({
+          access_token: token
+        }, function(err1, doc) {
+
+          if (err1) {
+            return res.status(400).json({
+              status: 0,
+              msg: 'Failed to authenticate token.'
+            });
+          } else if (doc == null) {
+            return res.status(400).json({
+              status: 0,
+              msg: 'Failed to authenticate token.'
+            });
+          } else if (doc.user_type == 1) {
+            return res.status(400).json({
+              status: 0,
+              msg: 'Failed to authenticate User.'
+            });
+          }
+          next();
+
+        })
+        return
+      }
+    });
+
+  } else {
+
+    // if there is no token
+    // return an error
+    return res.status(403).json({
+      status: 0,
+      msg: 'No token provided.'
+    });
+
+  }
+
+
+
+}
 
 
 /**
@@ -980,17 +980,57 @@ router.post('/get_business_jobs_json_data', authBusinessToken, function(req, res
     jobs_count = doc2
   })
 
+  param = req.body.param
+  if (param === 'open') {
+    job_param = 1;
+  } else if (param === 'active') {
+    job_param = 2;
+  } else if (param === 'dispute') {
+    job_param = 3;
+  } else if (param === 'closed') {
+    job_param = 4;
+  } else {
+    job_param = 1;
+  }
+
+  console.log(job_param)
   tomodel_cond = {
-    'users.access_token': req.headers['x-access-token']
+    'users.access_token': req.headers['x-access-token'],
+    'jobdetails.name': {
+      $regex: (req.body.name !== undefined) ? req.body.name : '',
+      $options: 'g'
+    },
+    'users.email': {
+      $regex: (req.body.email !== undefined) ? req.body.email : '',
+      $options: 'g'
+    },
+    'job_value': {
+      $regex: (req.body.job_value !== undefined) ? req.body.job_value : '',
+      $options: 'g'
+    },
+    // 'jobdetails.payment_date':(req.body.payment_date!==undefined) ? req.body.payment_date : '',
+    'jobdetails.site_address': {
+      $regex: (req.body.site_address !== undefined) ? req.body.site_address : '',
+      $options: 'g'
+    },
+    'jobdetails.phone': {
+      $regex: (req.body.phone !== undefined) ? req.body.phone : '',
+      $options: 'g'
+    },
+    // $and:[{
+    //
+    // }],
+    // $or:[{
+    //     'jobdetails.name': { $regex: (req.body.name!==undefined) ? req.body.name : '', $options: 'g' },
+    //     'job_value': { $regex: (req.body.job_value!==undefined) ? req.body.job_value : '', $options: 'g' },
+    // }]
   }
 
-  if(req.body.invoice_no){
-
-    tomodel_cond.invoice_no = { $regex: req.body.invoice_no, $options: 'g' }
-  }
 
 
-console.log(tomodel_cond)
+
+  console.log(tomodel_cond, new Date().toISOString())
+
   Job.aggregate([{
       "$lookup": {
         "from": "users",
@@ -1027,10 +1067,10 @@ console.log(tomodel_cond)
     {
       "$project": {
         "_id": "$_id",
-        "created_at": {
+        "created": {
           $ifNull: ["$job.created_at", ""]
         },
-        // "status": "$status",
+        "job_status": "$status",
         "business_id": "$business_id",
         "invoice_no": "$invoice_no",
         "job_value": "$job_value",
@@ -1046,14 +1086,36 @@ console.log(tomodel_cond)
                 "case": {
                   $eq: ["$status", 2]
                 },
-                then: "Accepted"
+                then: "active"
+              },
+              {
+                "case": {
+                  $eq: ["$status", 3]
+                },
+                then: "dispute"
+              },
+              {
+                "case": {
+                  $eq: ["$status", 0]
+                },
+                then: "closed"
+              },
+              {
+                "case": {
+                  $eq: ["$status", 5]
+                },
+                then: "all"
               },
             ],
             "default": "Else Status"
           }
         },
-        "payment_date": {
-          $ifNull: ["$jobdetails.payment_date", ""]
+        "payment_date": new Date(),
+        "payment_dated": {
+          $dateToString: {
+            format: '%Y-%m-%d',
+            date: {$ifNull: ["$jobdetails.payment_date", new Date("1970-01-01T00:00:00.000Z")]}
+          }
         },
         "site_address": {
           $ifNull: ["$jobdetails.site_address", ""]
@@ -1072,9 +1134,9 @@ console.log(tomodel_cond)
     },
     // { $sort : { created_at : -1 } }
 
-  ]).skip(0).limit(3).exec(function(err, doc) {
-    console.log(err)
+  ]).skip(0).limit(10).exec(function(err, doc) {
     if (err) {
+      console.log(err)
       return res.status(500).json({
         status: 0,
         msg: 'problam in fetch job data'
