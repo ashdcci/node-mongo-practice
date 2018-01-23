@@ -1,5 +1,6 @@
 var express = require('express');
 var path = require('path');
+var cors            = require('cors');
 var bodyParser = require('body-parser');
 var morgan      = require('morgan');
 var index = require('./routes/index');
@@ -13,9 +14,9 @@ var port = config.get('ng-mongo.site.port');
 var app = express();
 
 // Body Parser MW
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
+app.use(bodyParser.json()); // support json encoded bodies
+app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
+app.use(cors())
 //View Engine
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');

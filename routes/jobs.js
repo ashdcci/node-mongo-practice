@@ -1029,7 +1029,7 @@ router.post('/get_business_jobs_json_data', authBusinessToken, function(req, res
 
 
 
-  console.log(tomodel_cond, new Date().toISOString())
+
 
   Job.aggregate([{
       "$lookup": {

@@ -100,6 +100,7 @@ router.get('/users/:id',function(req, res, next){
 
 
 router.post('/register',function(req, res, next){
+  console.log(5241545)
     if(!req.body.email || !req.body.password || !req.body.user_type){
       return res.status(400).json({
         status:0,
@@ -126,8 +127,8 @@ router.post('/register',function(req, res, next){
           tomodel.email =  req.body.email
           tomodel.password =  pwd
           tomodel.user_type = req.body.user_type
-          tomodel.first_name = req.body.firstname
-          tomodel.last_name = req.body.lastname
+          tomodel.first_name = (req.body.firstname!==undefined) ? req.body.firstname : ''
+          tomodel.last_name = (req.body.lastname!==undefined) ? req.body.lastname : ''
           tomodel.access_token= createToken(req.body.email)
 
           var user_data = new User(tomodel)
@@ -156,7 +157,7 @@ router.post('/register',function(req, res, next){
 
         if(err.err_obj){
 
-          return res.status(503).json({
+          return res.status(401).json({
             status: 0,
             msg: 'user already exist'
           });
@@ -235,7 +236,7 @@ createToken = function(id) {
 
       if(err.err_obj){
 
-        return res.status(503).json({
+        return res.status(401).json({
           status: 0,
           msg: 'user not exist'
         });
@@ -257,9 +258,45 @@ createToken = function(id) {
  })
 
 
+router.get('/check-reset-token/:token',function(req, res, next){
+  if(!req.params.token){
+    return res.status(400).json({
+      status:0,
+      msg:'required field are missing'
+    })
+  }
+
+
+  Password.find({token: req.params.token,expired_at:{$gte:moment().format('YYYY-MM-DD HH:mm:ss') }},function(err,doc){
+
+    if(err){
+      return res.status(500).json({
+        status:0,
+        msg: "problam in fetch data"
+      })
+    }
+
+    if(doc!=null && doc.length > 0){
+      return res.status(200).json({
+        status: 1,
+        msg: 'Token exists'
+      });
+
+    }else{
+      return res.status(401).json({
+        status: 0,
+        msg: 'Token expired or not exist'
+      });
+    }
+  })
+
+
+
+})
+
 router.post('/reset-password',function(req, res, next){
 
-   if(!req.body.token || !req.body.password || !req.body.cpassword){
+   if(!req.body.token){
      return res.status(400).json({
        status:0,
        msg:'required field are missing'
@@ -317,7 +354,7 @@ router.post('/reset-password',function(req, res, next){
     if(err.err_obj){
 
       msg = (err.err_obj==2) ? 'Token expired or not exist' : 'problam in password updation'
-      return res.status(503).json({
+      return res.status(401).json({
         status: 0,
         msg: msg
       });
