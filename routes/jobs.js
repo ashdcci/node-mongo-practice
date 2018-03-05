@@ -973,6 +973,16 @@ router.put('/change-job-status', function(req, res, next) {
 })
 
 
+router.post('/get_customer_jobs_json_data',authCustomerToken,function(req, res, next){
+  jobs_count = 0
+  Job.count().exec(function(err2, doc2) {
+    jobs_count = doc2
+  })
+
+  res.status(200).json({status:1,count:jobs_count})
+  return
+})
+
 
 router.post('/get_business_jobs_json_data', authBusinessToken, function(req, res, next) {
   jobs_count = 0

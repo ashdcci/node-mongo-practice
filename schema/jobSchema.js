@@ -29,7 +29,7 @@ var jobSchema = new Schema({
   updated_at: { type: Date, default: null },
   deleted_at:{ type: Date, default: null }
 });
-jobSchema.index({_id: -1 });
+// jobSchema.index({_id: -1 });
 
 
 
@@ -76,10 +76,10 @@ jobPaymentSchema = new Schema({
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
 })
 
-jobDetailsSchema.index({_id: -1,job_id:1 });
-jobAttachmantSchema.index({_id: -1,job_id:1 });
-jobCommentSchema.index({_id: -1,job_id:1 });
-jobPaymentSchema.index({_id: -1,job_id:1 });
+// jobDetailsSchema.index({_id: -1,job_id:1 });
+// jobAttachmantSchema.index({_id: -1,job_id:1 });
+// jobCommentSchema.index({_id: -1,job_id:1 });
+// jobPaymentSchema.index({_id: -1,job_id:1 });
 
 module.exports = {
   jobSchema:jobSchema,

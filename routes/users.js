@@ -97,10 +97,142 @@ router.get('/users/:id',function(req, res, next){
 });
 
 
+router.post('/admin-register',function(req, res, next){
+  if(!req.body.email || !req.body.password || !req.body.user_type){
+    return res.status(400).json({
+      status:0,
+      msg:'required field are missing'
+    })
+  }
+
+
+
+  pwd = crypto.createHash("md5")
+    .update(req.body.password)
+    .digest('hex');
+
+    tomodel = {}
+
+  User.findOne({email:req.body.email,user_type:2}).exec()
+    .then(function(user) {
+
+      if(user!=null){
+
+        throw({err_obj:2})
+
+      }else{
+
+        tomodel.email =  req.body.email
+        tomodel.password =  pwd
+        tomodel.user_type = req.body.user_type
+        tomodel.first_name = (req.body.firstname!==undefined) ? req.body.firstname : ''
+        tomodel.last_name = (req.body.lastname!==undefined) ? req.body.lastname : ''
+        tomodel.access_token= createToken(req.body.email)
+
+        var user_data = new User(tomodel)
+        return user_data.save()
+
+      }
+
+    }).then(function(userData){
+        return res.status(200).json({
+          status : 1,
+          msg : 'register process done',
+          user_data: userData
+        })
+
+
+    }).catch(function(err){
+
+      if(err.err_obj){
+
+        return res.status(401).json({
+          status: 0,
+          msg: 'user already exist'
+        });
+
+      }else{
+
+        return res.status(500).json({
+          status:0,
+          msg: "problam in fetch data"
+        })
+
+      }
+
+    })
+
+    return
+
+
+})
+
+
+router.post('/admin-login',function(req, res, next){
+  pwd = crypto.createHash("md5")
+    .update(req.body.password)
+    .digest('hex');
+
+    tomodel = {}
+
+  User.findOne({email:req.body.email,user_type:2}).exec()
+    .then(function(user) {
+
+      if(user==null){
+
+        throw({err_obj:2})
+
+      }else{
+
+        tomodel.email =  req.body.email
+        tomodel.password =  pwd
+        tomodel.user_type = req.body.user_type
+        tomodel.first_name = (req.body.firstname!==undefined) ? req.body.firstname : ''
+        tomodel.last_name = (req.body.lastname!==undefined) ? req.body.lastname : ''
+        tomodel.access_token= createToken(req.body.email)
+
+        var user_data = new User(tomodel)
+        return user_data.save()
+
+      }
+
+    }).then(function(userData){
+
+        return res.status(200).json({
+          status : 1,
+          msg : 'login process done',
+          user_data: userData
+        })
+
+
+    }).catch(function(err){
+
+      if(err.err_obj){
+
+        return res.status(401).json({
+          status: 0,
+          msg: 'user not exist'
+        });
+
+      }else{
+
+        return res.status(500).json({
+          status:0,
+          msg: "problam in fetch data"
+        })
+
+      }
+
+    })
+
+    return
+})
+
+
 
 
 router.post('/register',function(req, res, next){
-  console.log(5241545)
+
     if(!req.body.email || !req.body.password || !req.body.user_type){
       return res.status(400).json({
         status:0,
