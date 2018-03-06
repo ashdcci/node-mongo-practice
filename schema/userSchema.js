@@ -62,11 +62,23 @@ var cardSchema = new Schema({
   updated_at: { type: Date, default: moment().format('YYYY-MM-DD HH:mm:ss') }
 })
 
+var continentSchema = new Schema({
+  code: String,
+  name: String
+})
+
+var countriesSchema = new Schema({
+  continent_code: String,
+  country_name: String
+})
+
 
 module.exports = {
   userSchema:userSchema,
   PasswordResetSchema:PasswordResetSchema,
   ProfileSchema:ProfileSchema,
   ImageSchema:ImageSchema,
-  cardSchema: cardSchema
+  cardSchema: cardSchema,
+  continentSchema: continentSchema,
+  countriesSchema: countriesSchema
 }

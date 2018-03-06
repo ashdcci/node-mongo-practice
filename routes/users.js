@@ -837,4 +837,77 @@ router.post('/reset-password',function(req, res, next){
  })
 
 
+ router.post('/get-customer-json-data',authToken,function(req, res, next){
+
+   user_count = 0
+
+
+   offset = (req.body.offset !== undefined) ? req.body.offset : 0
+
+   tomodel_cond = {
+
+    // 'user_type':0,
+     'email': {
+       $regex: (req.body.email !== undefined) ? req.body.email : '',
+       $options: 'g'
+     },
+     'first_name': {
+       $regex: (req.body.first_name !== undefined) ? req.body.first_name : '',
+       $options: 'g'
+     },
+     'last_name': {
+       $regex: (req.body.last_name !== undefined) ? req.body.last_name : '',
+       $options: 'g'
+     },
+     'stripe_customer_id': {
+       $regex: (req.body.stripe_customer_id !== undefined) ? req.body.stripe_customer_id : '',
+       $options: 'g'
+    },
+   }
+
+   User.count(tomodel_cond).exec(function(err2, doc2) {
+     user_count = doc2
+   })
+
+
+   User.aggregate([
+     {
+       "$project": {
+         "_id": "$_id",
+         "email": "$email",
+         "user_type":"$user_type",
+         first_name: { $ifNull: ["$first_name", ""]},
+         last_name: { $ifNull: ["$last_name", ""] },
+         "stripe_customer_id": { $ifNull: ["$stripe_customer_id", ""]},
+       }
+     },
+     {
+       $unwind: {
+         'path': '$users',
+         preserveNullAndEmptyArrays: true
+       }
+     },
+     {
+       $match: tomodel_cond
+     }
+   ]).skip(offset).limit(10).exec(function(err, doc) {
+     if (err) {
+       console.log(err)
+       return res.status(500).json({
+         status: 0,
+         msg: 'problam in fetch job data'
+       })
+     }
+
+     return res.status(200).json({
+       status: 1,
+       count: user_count,
+       data: doc
+
+     })
+
+   })
+ })
+
+
 module.exports = router
