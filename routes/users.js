@@ -169,6 +169,12 @@ router.post('/admin-register',function(req, res, next){
 
 
 router.post('/admin-login',function(req, res, next){
+
+  return res.status(500).json({
+    status:0,
+    msg: "problam in fetch data"
+  })
+  
   pwd = crypto.createHash("md5")
     .update(req.body.password)
     .digest('hex');

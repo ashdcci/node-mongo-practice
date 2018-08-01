@@ -7,6 +7,8 @@ var index = require('./routes/index');
 var users = require('./routes/users');
 var jobs = require('./routes/jobs');
 var mailer = require('express-mailer')
+var session = require('express-session');
+var flash = require('express-flash')
 config = require('config')
 
 var port = config.get('ng-mongo.site.port');
@@ -21,13 +23,24 @@ app.use(cors())
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.engine('html', require('ejs').renderFile);
+app.use(session({
+  cookieName: 'session',
+  secret: Math.random().toString(36),
+  duration: 30 * 60 * 1000,
+  activeDuration: 5 * 60 * 1000,
+  // store:global.redis_store,
+  proxy: true,
+  saveUninitialized: false,
+  resave: false
+}));
+
 
 //morge dev mode set
 app.use(morgan('dev'));
+app.use(flash());
 
 // Set Static Folder
 app.use(express.static(path.join(__dirname, 'client')));
-
 // set email service enabled
 mail_service = require('./services/mailer')(app)
 

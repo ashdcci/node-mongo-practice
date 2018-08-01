@@ -1,0 +1,18 @@
+hello world
+<%= messages %>
+<% if (typeof messages.error !== 'undefined' && messages.error.length > 0) { %>
+    <p class="error"><%= messages.error %></p>
+<% } %>
+<% if (typeof messages.info !== 'undefined' && messages.info.length > 0) { %>
+    <p class="info"><%= messages.info %></p>
+<% } %>
+<% if (typeof messages.success !== 'undefined' && messages.success.length > 0) { %>
+    <p class="info"><%= messages.success %></p>
+<% } %>
+
+
+
+<form method="post" action="/set_flash">
+<input type="text" name="username" />
+<input type="submit" />
+</form>

@@ -9,9 +9,9 @@
       "default_image_path":""
     },
     "dbConfig": {
-      "host": "localhost",
+      "host": "127.0.0.1",
       "port": 27017,
-      "dbname": "shared_test",
+      "dbname": "jobs_db",
       "user": "root",
       "password": "core2duo"
     },
@@ -22,6 +22,10 @@
     },
     "morgan":{
       "mode":"dev"
+    },
+    "stripe":{
+      "test":"sk_test_HXzN0MQU8uKORiWNOQj01MJT",
+      "live":""
     },
     "aws":{
       "bucket":"shared-test-dev",
