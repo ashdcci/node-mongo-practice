@@ -10,12 +10,9 @@ var upload = multer({
     bucket: config.get('ng-mongo.aws.bucket'),
     acl: config.get('ng-mongo.aws.acl'),
     metadata: function (req, file, cb) {
-      console.log(file);
-      console.log(file.fieldname);
       cb(null, {fieldName: file.fieldname});
     },
     key: function (req, file, cb) {
-      console.log('hello');
       cb(null, Date.now().toString()+file.originalname)
     }
   })

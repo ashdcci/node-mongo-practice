@@ -5,7 +5,7 @@ db = require('../config/db');
 upload = require('../services/multer-s3')
 moment = require('moment');
 mailer = require('../services/mailer')
-const _ = require('lodash');
+const _= require('lodash');
 
 var crypto = require('crypto')
 jwt = require('jsonwebtoken')
@@ -655,7 +655,7 @@ router.put('/reset-password', function(req, res, next) {
          msg: "problam in performing opertions"
        })
      }
-     
+
      if (result == null) {
        res.status(500).json({
          'status': 0,

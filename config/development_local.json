@@ -9,8 +9,8 @@
       "default_image_path":""
     },
     "dbConfig": {
-      "host": "ds111622.mlab.com",
-      "port": 11622,
+      "host": "localhost",
+      "port": 27017,
       "dbname": "shared_test",
       "user": "root",
       "password": "core2duo"
