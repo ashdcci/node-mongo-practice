@@ -17,7 +17,7 @@
     "ejs": "^2.5.6",
     "express": "^4.15.3",
     "express-mailer": "^0.3.1",
-    "jsonwebtoken": "^7.4.1",
+    "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.4",
     "mail": "^0.2.3",
     "moment": "^2.19.2",
